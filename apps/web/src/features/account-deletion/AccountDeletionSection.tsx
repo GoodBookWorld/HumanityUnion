@@ -8,7 +8,7 @@ import { useBrandSiteName } from "../brand-localization/useLocalizedBrand";
 import { ProfileSection } from "../../components/member/ProfileSection";
 import { Button } from "../../design-system/components/Button";
 import { PasswordInput } from "../../design-system/components/PasswordInput";
-import { AuthFeedbackMessage } from "../auth/components/AuthFeedbackMessage";
+import { ContextualActionFeedback } from "../auth/components/ContextualActionFeedback";
 import {
   confirmAccountDeletion,
   requestAccountDeletion,
@@ -47,6 +47,9 @@ export function AccountDeletionSection() {
 
   async function handleRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -65,6 +68,9 @@ export function AccountDeletionSection() {
 
   async function handleConfirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -81,19 +87,6 @@ export function AccountDeletionSection() {
     <ProfileSection title={t("deleteAccountTitle")}>
       <p>{t("deleteAccountIntro", { siteName })}</p>
       <p>{t("deleteAccountConsequences")}</p>
-      {deadline ? (
-        <AuthFeedbackMessage variant="success" title={t("deleteAccountTitle")}>
-          <p>{t("deleteAccountScheduled", { deadline })}</p>
-          <p>
-            <a href="/account/deletion/cancel">{t("recoveryTitle")}</a>
-          </p>
-        </AuthFeedbackMessage>
-      ) : null}
-      {error ? (
-        <AuthFeedbackMessage variant="error" title={t("securityActionFailed")}>
-          <p>{error}</p>
-        </AuthFeedbackMessage>
-      ) : null}
       {!open && !deadline ? (
         <div className="account-panel__actions">
           <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
@@ -118,6 +111,15 @@ export function AccountDeletionSection() {
               {t("deleteAccountSendCode")}
             </Button>
           </div>
+          {error ? (
+            <ContextualActionFeedback
+              variant="error"
+              title={t("securityActionFailed")}
+              noticeKey={`request:${error}`}
+            >
+              <p>{error}</p>
+            </ContextualActionFeedback>
+          ) : null}
         </form>
       ) : null}
       {codeSent && !deadline ? (
@@ -139,7 +141,28 @@ export function AccountDeletionSection() {
               {t("deleteAccountConfirm")}
             </Button>
           </div>
+          {error ? (
+            <ContextualActionFeedback
+              variant="error"
+              title={t("securityActionFailed")}
+              noticeKey={`confirm:${error}`}
+            >
+              <p>{error}</p>
+            </ContextualActionFeedback>
+          ) : null}
         </form>
+      ) : null}
+      {deadline ? (
+        <ContextualActionFeedback
+          variant="success"
+          title={t("deleteAccountTitle")}
+          noticeKey={`scheduled:${deadline}`}
+        >
+          <p>{t("deleteAccountScheduled", { deadline })}</p>
+          <p>
+            <a href="/account/deletion/cancel">{t("recoveryTitle")}</a>
+          </p>
+        </ContextualActionFeedback>
       ) : null}
     </ProfileSection>
   );

@@ -24,22 +24,18 @@ import {
   isIncorrectCodeMessage,
   normalizeIncorrectCodeMessage,
 } from "../lib/auth-feedback-messages";
-import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
+import { ContextualActionFeedback } from "./ContextualActionFeedback";
 
 import "./account-panel.css";
 
 interface AccountSecuritySectionProps {
   user: AuthUserPublic;
   onUserUpdated: (user: AuthUserPublic) => void;
-  onMessage: (message: string | null) => void;
-  onError: (message: string | null) => void;
 }
 
 export function AccountSecuritySection({
   user,
   onUserUpdated,
-  onMessage,
-  onError,
 }: AccountSecuritySectionProps) {
   const t = useTranslations("auth");
   const siteName = useBrandSiteName();
@@ -70,9 +66,10 @@ export function AccountSecuritySection({
   }
 
   async function handleStart(action: "enable" | "disable") {
+    if (submitting) {
+      return;
+    }
     setSubmitting(true);
-    onMessage(null);
-    onError(null);
     setLocalMessage(null);
     setLocalError(null);
 
@@ -84,13 +81,9 @@ export function AccountSecuritySection({
       }
 
       setPendingAction(action);
-      const message = t("twoStepCodeSent");
-      setLocalMessage(message);
-      onMessage(message);
+      setLocalMessage(t("twoStepCodeSent"));
     } catch (startError) {
-      const error = formatAuthFormError(startError);
-      setLocalError(error);
-      onError(error);
+      setLocalError(formatAuthFormError(startError));
     } finally {
       setSubmitting(false);
     }
@@ -101,9 +94,10 @@ export function AccountSecuritySection({
       return;
     }
 
+    if (submitting) {
+      return;
+    }
     setSubmitting(true);
-    onMessage(null);
-    onError(null);
     setLocalMessage(null);
     setLocalError(null);
 
@@ -114,15 +108,12 @@ export function AccountSecuritySection({
           : await confirmDisableLoginTwoStep(verificationCode);
 
       onUserUpdated(updated);
-      resetFlow();
       const message =
         pendingAction === "enable" ? t("twoStepEnabledSuccess") : t("twoStepDisabledSuccess");
+      resetFlow();
       setLocalMessage(message);
-      onMessage(message);
     } catch (confirmError) {
-      const error = normalizeIncorrectCodeMessage(formatAuthFormError(confirmError));
-      setLocalError(error);
-      onError(error);
+      setLocalError(normalizeIncorrectCodeMessage(formatAuthFormError(confirmError)));
     } finally {
       setSubmitting(false);
     }
@@ -133,22 +124,45 @@ export function AccountSecuritySection({
       return;
     }
 
+    if (submitting) {
+      return;
+    }
     setSubmitting(true);
-    onError(null);
     setLocalError(null);
 
     try {
       await resendLoginTwoStepSettingCode(pendingAction);
-      const message = t("newVerificationCodeSent");
-      setLocalMessage(message);
-      onMessage(message);
+      setLocalMessage(t("newVerificationCodeSent"));
     } catch (resendError) {
-      const error = formatAuthFormError(resendError);
-      setLocalError(error);
-      onError(error);
+      setLocalError(formatAuthFormError(resendError));
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function actionNotice(placement: "code" | "setting") {
+    return (
+      <>
+        {localError ? (
+          <ContextualActionFeedback
+            variant="error"
+            title={t("securityActionFailed")}
+            noticeKey={`${placement}:error:${localError}`}
+          >
+            <p>{displayError(localError)}</p>
+          </ContextualActionFeedback>
+        ) : null}
+        {localMessage ? (
+          <ContextualActionFeedback
+            variant="success"
+            title={t("verificationCodeSent")}
+            noticeKey={`${placement}:success:${localMessage}`}
+          >
+            <p>{localMessage}</p>
+          </ContextualActionFeedback>
+        ) : null}
+      </>
+    );
   }
 
   return (
@@ -185,18 +199,6 @@ export function AccountSecuritySection({
               }}
             />
           </label>
-          <div className="auth-form__feedback-stack">
-            {localError ? (
-              <AuthFeedbackMessage variant="error" title={t("securityActionFailed")}>
-                <p>{displayError(localError)}</p>
-              </AuthFeedbackMessage>
-            ) : null}
-            {localMessage ? (
-              <AuthFeedbackMessage variant="success" title={t("verificationCodeSent")}>
-                <p>{localMessage}</p>
-              </AuthFeedbackMessage>
-            ) : null}
-          </div>
           <div className="account-panel__actions">
             <Button
               variant="primary"
@@ -212,6 +214,7 @@ export function AccountSecuritySection({
               {tCommon("cancel")}
             </Button>
           </div>
+          {actionNotice("code")}
         </div>
       ) : (
         <div className="account-panel__form">
@@ -243,6 +246,7 @@ export function AccountSecuritySection({
               </Button>
             )}
           </div>
+          {actionNotice("setting")}
         </div>
       )}
     </ProfileSection>

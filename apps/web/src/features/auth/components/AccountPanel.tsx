@@ -21,6 +21,7 @@ import { AdminMetricDetailsGrid } from "../../administration/components/AdminMet
 import { AccountSecuritySection } from "./AccountSecuritySection";
 import { AccountDeletionSection } from "../../account-deletion/AccountDeletionSection";
 import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
+import { ContextualActionFeedback } from "./ContextualActionFeedback";
 import { revealContextualFeedback } from "../reveal-contextual-feedback";
 import "./account-panel.css";
 import "../../administration/components/admin-panel.css";
@@ -33,9 +34,14 @@ export function AccountPanel() {
   const showCompleteProfileCta = searchParams.get("confirmed") === "1";
   const [user, setUser] = useState<AuthUserPublic | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [passwordFeedback, setPasswordFeedback] = useState<{
+    variant: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [sessionFeedback, setSessionFeedback] = useState<{
+    variant: "success" | "error";
+    text: string;
+  } | null>(null);
   const [emailFeedback, setEmailFeedback] = useState<{
     variant: "success" | "error";
     text: string;
@@ -47,6 +53,8 @@ export function AccountPanel() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [passwordPending, setPasswordPending] = useState(false);
+  const [sessionsPending, setSessionsPending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,6 +103,9 @@ export function AccountPanel() {
     if (submitting) {
       return;
     }
+    if (passwordPending) {
+      return;
+    }
     setSubmitting(true);
     setEmailFeedback(null);
 
@@ -116,14 +127,15 @@ export function AccountPanel() {
 
   async function handlePasswordChange(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitting(true);
-    setMessage(null);
-    setActionError(null);
-    setPasswordSuccess(null);
+    if (passwordPending || submitting) {
+      return;
+    }
+    setPasswordPending(true);
+    setPasswordFeedback(null);
 
     if (newPassword !== confirmNewPassword) {
-      setActionError(t("passwordMismatch"));
-      setSubmitting(false);
+      setPasswordFeedback({ variant: "error", text: t("passwordMismatch") });
+      setPasswordPending(false);
       return;
     }
 
@@ -136,31 +148,37 @@ export function AccountPanel() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
-      setPasswordSuccess(t("passwordChangedSuccess"));
+      setPasswordFeedback({ variant: "success", text: t("passwordChangedSuccess") });
     } catch (changeError) {
-      setActionError(
-        changeError instanceof Error ? changeError.message : t("unableToChangePassword"),
-      );
+      setPasswordFeedback({
+        variant: "error",
+        text: changeError instanceof Error ? changeError.message : t("unableToChangePassword"),
+      });
     } finally {
-      setSubmitting(false);
+      setPasswordPending(false);
     }
   }
 
   async function handleRevokeOtherSessions() {
-    setSubmitting(true);
-    setMessage(null);
-    setActionError(null);
-    setPasswordSuccess(null);
+    if (sessionsPending) {
+      return;
+    }
+    setSessionsPending(true);
+    setSessionFeedback(null);
 
     try {
       const result = await revokeAllOtherSessions();
-      setMessage(t("signedOutOtherSessions", { count: result.revokedCount }));
+      setSessionFeedback({
+        variant: "success",
+        text: t("signedOutOtherSessions", { count: result.revokedCount }),
+      });
     } catch (revokeError) {
-      setActionError(
-        revokeError instanceof Error ? revokeError.message : t("unableToRevokeSessions"),
-      );
+      setSessionFeedback({
+        variant: "error",
+        text: revokeError instanceof Error ? revokeError.message : t("unableToRevokeSessions"),
+      });
     } finally {
-      setSubmitting(false);
+      setSessionsPending(false);
     }
   }
 
@@ -211,16 +229,6 @@ export function AccountPanel() {
             {t("pendingEmailChange", { email: user.pendingEmail })}
           </p>
         ) : null}
-        {message ? (
-          <AuthFeedbackMessage variant="success" title={t("accountUpdate")}>
-            <p>{message}</p>
-          </AuthFeedbackMessage>
-        ) : null}
-        {actionError ? (
-          <AuthFeedbackMessage variant="error" title={t("accountActionFailed")}>
-            <p>{actionError}</p>
-          </AuthFeedbackMessage>
-        ) : null}
         {user.emailVerificationStatus !== "verified" ? (
           <div className="account-panel__actions">
             <Button href="/confirm-email" variant="secondary">
@@ -233,12 +241,7 @@ export function AccountPanel() {
         </p>
       </ProfileSection>
 
-      <AccountSecuritySection
-        user={user}
-        onUserUpdated={setUser}
-        onMessage={setMessage}
-        onError={setActionError}
-      />
+      <AccountSecuritySection user={user} onUserUpdated={setUser} />
 
       <ProfileSection title={t("changeEmail")}>
         <form className="account-panel__form" onSubmit={(event) => void handleEmailChange(event)}>
@@ -253,7 +256,7 @@ export function AccountPanel() {
             />
           </label>
           <div className="account-panel__actions">
-            <Button type="submit" variant="secondary" disabled={submitting}>
+            <Button type="submit" variant="secondary" disabled={submitting || passwordPending}>
               {t("requestEmailChange")}
             </Button>
           </div>
@@ -311,16 +314,24 @@ export function AccountPanel() {
               required
             />
           </label>
-          {passwordSuccess ? (
-            <AuthFeedbackMessage variant="success" title={t("passwordUpdated")}>
-              <p>{passwordSuccess}</p>
-            </AuthFeedbackMessage>
-          ) : null}
           <div className="account-panel__actions">
-            <Button type="submit" variant="secondary" disabled={submitting}>
+            <Button type="submit" variant="secondary" disabled={passwordPending || submitting}>
               {t("updatePassword")}
             </Button>
           </div>
+          {passwordFeedback ? (
+            <ContextualActionFeedback
+              variant={passwordFeedback.variant}
+              title={
+                passwordFeedback.variant === "success"
+                  ? t("passwordUpdated")
+                  : t("accountActionFailed")
+              }
+              noticeKey={`${passwordFeedback.variant}:${passwordFeedback.text}`}
+            >
+              <p>{passwordFeedback.text}</p>
+            </ContextualActionFeedback>
+          ) : null}
         </form>
         <p className="account-panel__actions">
           <Button href="/password-reset" variant="secondary">
@@ -333,12 +344,23 @@ export function AccountPanel() {
         <div className="account-panel__actions">
           <Button
             variant="secondary"
-            disabled={submitting}
+            disabled={sessionsPending}
             onClick={() => void handleRevokeOtherSessions()}
           >
             {t("logOutOtherSessions")}
           </Button>
         </div>
+        {sessionFeedback ? (
+          <ContextualActionFeedback
+            variant={sessionFeedback.variant}
+            title={
+              sessionFeedback.variant === "success" ? t("accountUpdate") : t("accountActionFailed")
+            }
+            noticeKey={`${sessionFeedback.variant}:${sessionFeedback.text}`}
+          >
+            <p>{sessionFeedback.text}</p>
+          </ContextualActionFeedback>
+        ) : null}
       </ProfileSection>
 
       <AccountDeletionSection />

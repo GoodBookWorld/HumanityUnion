@@ -38,3 +38,27 @@ export function revealContextualFeedback(element: HTMLElement | null): boolean {
   });
   return true;
 }
+
+let queuedReveal: HTMLElement | null = null;
+let revealFlushScheduled = false;
+
+/**
+ * When several independent action results appear in the same turn, only the
+ * latest one asks the viewport to move. A single result still reveals.
+ */
+export function queueContextualFeedbackReveal(element: HTMLElement | null): void {
+  if (!element) {
+    return;
+  }
+  queuedReveal = element;
+  if (revealFlushScheduled) {
+    return;
+  }
+  revealFlushScheduled = true;
+  queueMicrotask(() => {
+    revealFlushScheduled = false;
+    const target = queuedReveal;
+    queuedReveal = null;
+    revealContextualFeedback(target);
+  });
+}

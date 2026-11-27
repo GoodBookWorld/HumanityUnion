@@ -42,7 +42,7 @@ describe("HU-UX-01D Change Email contextual feedback", () => {
     const feedbackAt = emailSection.indexOf("account-panel__action-feedback");
     assert.ok(buttonAt >= 0);
     assert.ok(feedbackAt > buttonAt);
-    assert.match(emailSection, /disabled=\{submitting\}/);
+    assert.match(emailSection, /disabled=\{submitting \|\| passwordPending\}/);
     assert.match(emailSection, /type="submit"/);
     assert.match(emailSection, /required/);
     assert.match(emailHandler, /requestEmailChange\(newEmail\)/);
@@ -66,14 +66,12 @@ describe("HU-UX-01D Change Email contextual feedback", () => {
   it("keeps Change Email pending local and leaves other account feedback in place", () => {
     assert.match(emailHandler, /if \(submitting\) \{\s*return;\s*\}/);
     assert.match(emailHandler, /setEmailFeedback\(null\)/);
-    assert.doesNotMatch(emailHandler, /setMessage\(/);
-    assert.doesNotMatch(emailHandler, /setActionError\(/);
-    assert.doesNotMatch(emailHandler, /setPasswordSuccess\(/);
-    assert.match(passwordHandler, /setPasswordSuccess\(/);
-    assert.match(panel, /onMessage=\{setMessage\}/);
-    assert.match(panel, /onError=\{setActionError\}/);
-    assert.match(panel, /setMessage\(t\("signedOutOtherSessions"/);
+    assert.doesNotMatch(emailHandler, /setPasswordFeedback\(/);
+    assert.doesNotMatch(emailHandler, /setSessionFeedback\(/);
+    assert.match(passwordHandler, /setPasswordFeedback\(/);
     assert.doesNotMatch(passwordHandler, /setEmailFeedback/);
+    assert.match(panel, /signedOutOtherSessions/);
+    assert.doesNotMatch(accountSection, /signedOutOtherSessions/);
   });
 
   it("preserves the existing verification instructions and field validation", () => {

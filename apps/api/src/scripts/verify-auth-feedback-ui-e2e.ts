@@ -67,8 +67,18 @@ function verifyAuthRouteUsage(): void {
 
   for (const route of routes) {
     const source = readRepoFile(route);
-    assert(source.includes("AuthFeedbackMessage"), `${route} must use AuthFeedbackMessage.`);
+    const usesFeedback =
+      source.includes("AuthFeedbackMessage") || source.includes("ContextualActionFeedback");
+    assert(usesFeedback, `${route} must use AuthFeedbackMessage or ContextualActionFeedback.`);
   }
+
+  const contextual = readRepoFile(
+    "apps/web/src/features/auth/components/ContextualActionFeedback.tsx",
+  );
+  assert(
+    contextual.includes("AuthFeedbackMessage"),
+    "Contextual action feedback must render AuthFeedbackMessage.",
+  );
 }
 
 function verifyCooldownAndErrorCopy(): void {
