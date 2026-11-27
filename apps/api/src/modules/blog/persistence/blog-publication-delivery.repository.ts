@@ -18,6 +18,17 @@ interface BlogPublicationDeliveryDocument extends BlogPublicationDeliveryRecord 
 
 const memoryDeliveries: BlogPublicationDeliveryRecord[] = [];
 
+export function snapshotBlogPublicationDeliveriesMemory(): BlogPublicationDeliveryRecord[] {
+  return memoryDeliveries.map((delivery) => structuredClone(delivery));
+}
+
+export function restoreBlogPublicationDeliveriesMemory(
+  deliveries: readonly BlogPublicationDeliveryRecord[],
+): void {
+  memoryDeliveries.length = 0;
+  memoryDeliveries.push(...deliveries.map((delivery) => structuredClone(delivery)));
+}
+
 function isMemoryStore(): boolean {
   return process.env.BLOG_SUBSCRIBER_FORCE_MEMORY === "true" || !isMongoConfigured();
 }

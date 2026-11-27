@@ -8,7 +8,10 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  AUTHOR_PUBLICATION_MAX_OFFSET,
+  AUTHOR_PUBLICATION_PAGE_SIZE,
   authorPublicationScrollMaxPx,
+  canRequestAuthorPublicationOffset,
   mergeAuthorPublicationCards,
   shouldLoadMoreAuthorPublications,
 } from "./author-publications-list.js";
@@ -127,6 +130,25 @@ describe("HU-UX-01B author publications widget", () => {
       [{ postId: "b" }, { postId: "c" }],
     );
     assert.deepEqual(merged.map((item) => item.postId), ["a", "b", "c"]);
+
+    assert.equal(AUTHOR_PUBLICATION_PAGE_SIZE, 10);
+    assert.equal(AUTHOR_PUBLICATION_MAX_OFFSET, 2000);
+    assert.equal(canRequestAuthorPublicationOffset(0), true);
+    assert.equal(canRequestAuthorPublicationOffset(AUTHOR_PUBLICATION_MAX_OFFSET), true);
+    assert.equal(
+      canRequestAuthorPublicationOffset(AUTHOR_PUBLICATION_MAX_OFFSET + AUTHOR_PUBLICATION_PAGE_SIZE),
+      false,
+    );
+    assert.equal(canRequestAuthorPublicationOffset(1980 + 20), true);
+    assert.equal(canRequestAuthorPublicationOffset(1990 + 20), false);
+    const disclosure = read("features/member-profile/components/AuthorPublicationsDisclosure.tsx");
+    assert.match(disclosure, /if \(!canRequestAuthorPublicationOffset\(offset\)\)/);
+    assert.match(disclosure, /data\.hasMore && canRequestAuthorPublicationOffset\(followingOffset\)/);
+    assert.match(disclosure, /!canRequestAuthorPublicationOffset\(nextOffset\)/);
+    assert.match(
+      disclosure,
+      /hasMore && canRequestAuthorPublicationOffset\(nextOffset\)/,
+    );
   });
 
   it("keeps new keys in WEB and API catalogs and preserves draft deletion keys", () => {

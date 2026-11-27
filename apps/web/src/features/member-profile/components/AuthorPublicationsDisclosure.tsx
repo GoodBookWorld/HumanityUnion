@@ -25,6 +25,7 @@ import { resolveMediaUrl } from "../../media-upload/media-url";
 import {
   AUTHOR_PUBLICATION_PAGE_SIZE,
   authorPublicationScrollMaxPx,
+  canRequestAuthorPublicationOffset,
   mergeAuthorPublicationCards,
   shouldLoadMoreAuthorPublications,
 } from "../author-publications-list";
@@ -121,6 +122,10 @@ export function AuthorPublicationsDisclosure({ publicName }: { publicName: strin
 
   const loadPage = useCallback(
     async (offset: number, mode: "replace" | "append") => {
+      if (!canRequestAuthorPublicationOffset(offset)) {
+        setHasMore(false);
+        return;
+      }
       if (pendingRef.current) {
         return;
       }
@@ -144,8 +149,9 @@ export function AuthorPublicationsDisclosure({ publicName }: { publicName: strin
         setItems((current) =>
           mode === "replace" ? [...data.items] : mergeAuthorPublicationCards(current, data.items),
         );
-        setHasMore(data.hasMore);
-        setNextOffset(offset + data.items.length);
+        const followingOffset = offset + data.items.length;
+        setHasMore(data.hasMore && canRequestAuthorPublicationOffset(followingOffset));
+        setNextOffset(followingOffset);
         loadedSubjectRef.current = subjectKey;
         setPhase(mode === "replace" && data.items.length === 0 ? "empty" : "ready");
       } catch (error) {
@@ -209,6 +215,7 @@ export function AuthorPublicationsDisclosure({ publicName }: { publicName: strin
   function onScroll(event: UIEvent<HTMLDivElement>) {
     const node = event.currentTarget;
     if (
+      !canRequestAuthorPublicationOffset(nextOffset) ||
       !shouldLoadMoreAuthorPublications({
         scrollTop: node.scrollTop,
         clientHeight: node.clientHeight,
@@ -286,7 +293,7 @@ export function AuthorPublicationsDisclosure({ publicName }: { publicName: strin
                 <AuthorPublicationCard key={post.postId} post={post} />
               ))}
             </ul>
-            {hasMore ? (
+            {hasMore && canRequestAuthorPublicationOffset(nextOffset) ? (
               <button
                 type="button"
                 className="hu-button public-author-publications__more"

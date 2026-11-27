@@ -13,6 +13,15 @@ export interface BlogCommentMongoDocument extends BlogComment {
 
 const memoryComments: BlogComment[] = [];
 
+export function snapshotBlogCommentsMemory(): BlogComment[] {
+  return memoryComments.map((comment) => structuredClone(comment));
+}
+
+export function restoreBlogCommentsMemory(comments: readonly BlogComment[]): void {
+  memoryComments.length = 0;
+  memoryComments.push(...comments.map((comment) => structuredClone(comment)));
+}
+
 async function ensureReady(): Promise<void> {
   if (!isMongoConfigured()) {
     return;

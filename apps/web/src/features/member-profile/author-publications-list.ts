@@ -1,4 +1,10 @@
 export const AUTHOR_PUBLICATION_PAGE_SIZE = 10;
+/** Matches PUBLIC_AUTHOR_PUBLICATION_MAX_OFFSET. A larger offset is rejected by the API. */
+export const AUTHOR_PUBLICATION_MAX_OFFSET = 2000;
+
+export function canRequestAuthorPublicationOffset(offset: number): boolean {
+  return Number.isInteger(offset) && offset >= 0 && offset <= AUTHOR_PUBLICATION_MAX_OFFSET;
+}
 
 /** Null means the list should use its content height (one or two cards). */
 export function authorPublicationScrollMaxPx(

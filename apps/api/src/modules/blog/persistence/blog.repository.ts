@@ -72,6 +72,27 @@ function blogMemory(): NonNullable<typeof blogMemoryForTests> | null {
   return blogMemoryForTests;
 }
 
+export function isBlogMemoryPersistenceEnabled(): boolean {
+  return blogMemoryForTests !== null;
+}
+
+export function snapshotBlogMemoryPosts(): BlogPost[] {
+  if (!blogMemoryForTests) {
+    return [];
+  }
+  return [...blogMemoryForTests.posts.values()].map((post) => structuredClone(post));
+}
+
+export function restoreBlogMemoryPosts(posts: readonly BlogPost[]): void {
+  if (!blogMemoryForTests) {
+    return;
+  }
+  blogMemoryForTests.posts.clear();
+  for (const post of posts) {
+    blogMemoryForTests.posts.set(post.postId, structuredClone(post));
+  }
+}
+
 function postsCollection() {
   return getMongoCollection<BlogPostMongoDocument>(MONGO_COLLECTIONS.blogPosts);
 }
@@ -404,6 +425,7 @@ export async function deleteNeverPublishedOwnedDraft(input: {
   postId: string;
   authorParticipantId: string;
   expectedUpdatedAt: string;
+  session?: ClientSession;
 }): Promise<boolean> {
   const memory = blogMemory();
   if (memory) {
@@ -416,21 +438,27 @@ export async function deleteNeverPublishedOwnedDraft(input: {
   }
 
   await ensureBlogMongoReady();
-  const result = await postsCollection().deleteOne({
-    postId: input.postId,
-    authorParticipantId: input.authorParticipantId,
-    status: "draft",
-    publishedVersion: 0,
-    updatedAt: input.expectedUpdatedAt,
-    administrativelyBlocked: { $ne: true },
-    "externalCover.source": { $ne: "integrity-media" },
-    "externalVideo.source": { $ne: "integrity-media" },
-    "editorialHistory.action": { $nin: [...DRAFT_DISCARD_BLOCKING_HISTORY] },
-  });
+  const result = await postsCollection().deleteOne(
+    {
+      postId: input.postId,
+      authorParticipantId: input.authorParticipantId,
+      status: "draft",
+      publishedVersion: 0,
+      updatedAt: input.expectedUpdatedAt,
+      administrativelyBlocked: { $ne: true },
+      "externalCover.source": { $ne: "integrity-media" },
+      "externalVideo.source": { $ne: "integrity-media" },
+      "editorialHistory.action": { $nin: [...DRAFT_DISCARD_BLOCKING_HISTORY] },
+    },
+    input.session ? { session: input.session } : {},
+  );
   return result.deletedCount === 1;
 }
 
-export async function findBlogPostById(postId: string): Promise<BlogPost | null> {
+export async function findBlogPostById(
+  postId: string,
+  options: RepositorySessionOptions = {},
+): Promise<BlogPost | null> {
   const memory = blogMemory();
   if (memory) {
     const post = memory.posts.get(postId);
@@ -438,7 +466,10 @@ export async function findBlogPostById(postId: string): Promise<BlogPost | null>
   }
 
   await ensureBlogMongoReady();
-  const doc = await postsCollection().findOne({ postId });
+  const doc = await postsCollection().findOne(
+    { postId },
+    options.session ? { session: options.session } : {},
+  );
   return doc ? fromBlogPostMongoDocument(doc) : null;
 }
 

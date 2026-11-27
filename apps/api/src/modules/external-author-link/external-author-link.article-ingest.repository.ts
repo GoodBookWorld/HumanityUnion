@@ -183,7 +183,10 @@ export async function findArticleDelivery(
 }
 
 /** Local read only. Does not call Integrity Media. */
-export async function articleDeliveryReferencesBlogPost(postId: string): Promise<boolean> {
+export async function articleDeliveryReferencesBlogPost(
+  postId: string,
+  options: { session?: ClientSession } = {},
+): Promise<boolean> {
   if (articleDeliveryUsesMemory()) {
     for (const row of memoryRows.values()) {
       if (row.postId === postId) {
@@ -194,7 +197,7 @@ export async function articleDeliveryReferencesBlogPost(postId: string): Promise
   }
   const found = await collection().findOne(
     { source: INTEGRITY_MEDIA_SOURCE, postId },
-    { projection: { _id: 1 } },
+    { projection: { _id: 1 }, ...(options.session ? { session: options.session } : {}) },
   );
   return found !== null;
 }

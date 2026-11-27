@@ -20,6 +20,17 @@ export function resetContentTranslationMemoryStoreForTests(): void {
   records.clear();
 }
 
+export function snapshotContentTranslationMemory(): TranslatedContentRecord[] {
+  return [...records.values()].map((record) => structuredClone(record));
+}
+
+export function restoreContentTranslationMemory(stored: readonly TranslatedContentRecord[]): void {
+  records.clear();
+  for (const record of stored) {
+    records.set(identityKey(record), structuredClone(record));
+  }
+}
+
 export function upsertContentTranslationMemory(
   record: TranslatedContentRecord,
 ): TranslatedContentRecord {

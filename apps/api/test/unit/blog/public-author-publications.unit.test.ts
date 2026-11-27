@@ -15,6 +15,8 @@ import { BlogValidationError } from "../../../src/modules/blog/blog.errors.js";
 import {
   listPublicAuthorPublicationsByPublicName,
   parsePublicAuthorPublicationPage,
+  publicAuthorPublicationHasAnotherSupportedPage,
+  PUBLIC_AUTHOR_PUBLICATION_MAX_OFFSET,
 } from "../../../src/modules/blog/blog-public-author-publications.js";
 import { isBlogAuthorAdministrativelyBlocked } from "../../../src/modules/blog/admin-publishing.service.js";
 import {
@@ -364,5 +366,137 @@ describe("HU-UX-01B public author publications", () => {
     assert.match(profile, /publicAuthorHasVisiblePublications/);
     assert.match(profile, /hasPublicAuthorPublications = true/);
     assert.equal(profile.includes("listPublicAuthorPublicationRecords"), false);
+    assert.match(service, /publicAuthorPublicationHasAnotherSupportedPage/);
+    assert.equal(service.includes("countDocuments"), false);
+  });
+
+  it("stops hasMore before the next offset would be rejected", async () => {
+    const total = PUBLIC_AUTHOR_PUBLICATION_MAX_OFFSET + 15;
+    for (let index = 0; index < total; index += 1) {
+      await insertBlogPost(
+        post({
+          postId: `p${String(index).padStart(4, "0")}`,
+          slug: `public-article-${index}`,
+          title: `Article ${index}`,
+          publishedAt: "2026-10-01T12:00:00.000Z",
+        }),
+      );
+    }
+    await insertBlogPost(
+      post({
+        postId: "hidden-draft",
+        slug: "hidden-draft",
+        status: "draft",
+        publishedVersion: 0,
+        publishedAt: undefined,
+      }),
+    );
+
+    const first = await listPublicAuthorPublicationsByPublicName({
+      publicName: "public-author",
+      viewerIsAuthenticated: false,
+    });
+    assert.equal(first.limit, 10);
+    assert.equal(first.offset, 0);
+    assert.equal(first.items.length, 10);
+    assert.equal(first.items[0]?.postId, "p0000");
+    assert.equal(first.items[9]?.postId, "p0009");
+    assert.equal(first.items.some((item) => item.postId === "hidden-draft"), false);
+    assert.equal(first.hasMore, true);
+
+    const second = await listPublicAuthorPublicationsByPublicName({
+      publicName: "public-author",
+      viewerIsAuthenticated: false,
+      limit: 10,
+      offset: 10,
+    });
+    assert.equal(second.items[0]?.postId, "p0010");
+    assert.equal(second.hasMore, true);
+
+    const finalSupported = await listPublicAuthorPublicationsByPublicName({
+      publicName: "public-author",
+      viewerIsAuthenticated: false,
+      limit: 10,
+      offset: PUBLIC_AUTHOR_PUBLICATION_MAX_OFFSET,
+    });
+    assert.equal(finalSupported.items.length, 10);
+    assert.equal(finalSupported.items[0]?.postId, "p2000");
+    assert.equal(finalSupported.hasMore, false);
+    assert.equal(
+      publicAuthorPublicationHasAnotherSupportedPage({
+        offset: PUBLIC_AUTHOR_PUBLICATION_MAX_OFFSET,
+        returnedCount: 10,
+        repositoryHasMore: true,
+      }),
+      false,
+    );
+
+    const pageBeforeLimit = await listPublicAuthorPublicationsByPublicName({
+      publicName: "public-author",
+      viewerIsAuthenticated: false,
+      limit: 10,
+      offset: 1990,
+    });
+    assert.equal(pageBeforeLimit.hasMore, true);
+    assert.equal(pageBeforeLimit.items.length, 10);
+
+    const maxPageAtBoundary = await listPublicAuthorPublicationsByPublicName({
+      publicName: "public-author",
+      viewerIsAuthenticated: false,
+      limit: 20,
+      offset: 1990,
+    });
+    assert.equal(maxPageAtBoundary.limit, 20);
+    assert.equal(maxPageAtBoundary.items.length, 20);
+    assert.equal(maxPageAtBoundary.hasMore, false);
+
+    const maxPageFirst = await listPublicAuthorPublicationsByPublicName({
+      publicName: "public-author",
+      viewerIsAuthenticated: false,
+      limit: 20,
+      offset: 0,
+    });
+    assert.equal(maxPageFirst.items.length, 20);
+    assert.equal(maxPageFirst.items[0]?.postId, "p0000");
+    assert.equal(maxPageFirst.hasMore, true);
+
+    await assert.rejects(
+      () =>
+        listPublicAuthorPublicationsByPublicName({
+          publicName: "public-author",
+          viewerIsAuthenticated: false,
+          offset: PUBLIC_AUTHOR_PUBLICATION_MAX_OFFSET + 10,
+        }),
+      BlogValidationError,
+    );
+  });
+
+  it("reports a short final page when fewer than the page size remain", async () => {
+    for (let index = 0; index < 4; index += 1) {
+      await insertBlogPost(
+        post({
+          postId: `short-${index}`,
+          slug: `short-${index}`,
+          title: `Short ${index}`,
+          publishedAt: `2026-10-0${4 - index}T12:00:00.000Z`,
+        }),
+      );
+    }
+    const page = await listPublicAuthorPublicationsByPublicName({
+      publicName: "public-author",
+      viewerIsAuthenticated: false,
+      limit: 10,
+    });
+    assert.equal(page.items.length, 4);
+    assert.equal(page.items[0]?.postId, "short-0");
+    assert.equal(page.hasMore, false);
+
+    const maxPage = await listPublicAuthorPublicationsByPublicName({
+      publicName: "public-author",
+      viewerIsAuthenticated: false,
+      limit: 20,
+    });
+    assert.equal(maxPage.items.length, 4);
+    assert.equal(maxPage.hasMore, false);
   });
 });

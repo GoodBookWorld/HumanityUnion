@@ -14,6 +14,15 @@ interface BlogReactionMongoDocument extends BlogReaction {
 }
 
 const memoryReactions: BlogReaction[] = [];
+
+export function snapshotBlogReactionsMemory(): BlogReaction[] {
+  return memoryReactions.map((reaction) => structuredClone(reaction));
+}
+
+export function restoreBlogReactionsMemory(reactions: readonly BlogReaction[]): void {
+  memoryReactions.length = 0;
+  memoryReactions.push(...reactions.map((reaction) => structuredClone(reaction)));
+}
 const lastReactionAtByActor = new Map<string, number>();
 const MIN_REACTION_INTERVAL_MS = 500;
 

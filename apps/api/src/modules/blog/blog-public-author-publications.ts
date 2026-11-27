@@ -15,7 +15,25 @@ import { listPublicAuthorPublicationRecords } from "./persistence/blog.repositor
 
 export const PUBLIC_AUTHOR_PUBLICATION_DEFAULT_LIMIT = 10;
 export const PUBLIC_AUTHOR_PUBLICATION_MAX_LIMIT = 20;
+/**
+ * Offset pagination stays in place for this release. Callers may request an
+ * offset from 0 through 2000. The default page size is 10 and the largest
+ * accepted page size is 20. hasMore is false when the next page would start
+ * above 2000, so a full final page is not advertised as another request the
+ * API would reject.
+ */
 export const PUBLIC_AUTHOR_PUBLICATION_MAX_OFFSET = 2000;
+
+export function publicAuthorPublicationHasAnotherSupportedPage(input: {
+  offset: number;
+  returnedCount: number;
+  repositoryHasMore: boolean;
+}): boolean {
+  if (!input.repositoryHasMore || input.returnedCount < 1) {
+    return false;
+  }
+  return input.offset + input.returnedCount <= PUBLIC_AUTHOR_PUBLICATION_MAX_OFFSET;
+}
 
 export function parsePublicAuthorPublicationPage(input: {
   limit?: number;
@@ -116,7 +134,11 @@ export async function listPublicAuthorPublicationsByPublicName(input: {
     items,
     limit: page.limit,
     offset: page.offset,
-    hasMore: listed.hasMore,
+    hasMore: publicAuthorPublicationHasAnotherSupportedPage({
+      offset: page.offset,
+      returnedCount: items.length,
+      repositoryHasMore: listed.hasMore,
+    }),
   };
   assertNoInternalBlogFields(response);
   return response;

@@ -107,7 +107,6 @@ import {
   findBlogAuthorApplicationById,
   findBlogCapabilityGrant,
   findBlogPostById,
-  deleteNeverPublishedOwnedDraft,
   findBlogPostBySlug,
   findLatestBlogAuthorApplication,
   insertBlogAuthorApplication,
@@ -125,10 +124,10 @@ import {
 } from "./persistence/blog.repository.js";
 import { isBlogAuthorAdministrativelyBlocked } from "./admin-publishing.service.js";
 import { isIntegrityLinkedBlogPost, isNeverPublishedDraftEligible } from "./blog-draft-discard.js";
-import { deleteBlogCommentsByPostIds } from "./persistence/blog-comment.repository.js";
-import { deleteBlogPublicationDeliveriesByPostIds } from "./persistence/blog-publication-delivery.repository.js";
-import { deleteBlogReactionsByPostIds } from "./persistence/blog-reaction.repository.js";
-import { deleteBlogPostContentTranslations } from "../language/persistence/content-translation.repository.js";
+import {
+  commitUnpublishedDraftDiscard,
+  recordDraftDiscardedAfterCommit,
+} from "./blog-draft-discard-commit.js";
 import { articleDeliveryReferencesBlogPost } from "../external-author-link/external-author-link.article-ingest.repository.js";
 
 export { listBlogCategories, listPublishedBlogPostsForSearch };
@@ -1354,35 +1353,27 @@ export async function discardUnpublishedBlogDraft(input: {
     throw new BlogConflictError(DRAFT_DISCARD_CONFLICT);
   }
 
-  const deleted = await deleteNeverPublishedOwnedDraft({
+  const committed = await commitUnpublishedDraftDiscard({
     postId: existing.postId,
     authorParticipantId: input.actorParticipantId,
-    expectedUpdatedAt: input.expectedUpdatedAt,
+    expectedUpdatedAt: input.expectedUpdatedAt.trim(),
   });
-  if (!deleted) {
-    const current = await findBlogPostById(input.postId);
-    if (!current || current.authorParticipantId !== input.actorParticipantId) {
-      throw new BlogNotFoundError();
-    }
-    throw new BlogConflictError("This draft changed and was not deleted.");
+  invalidateGlobalSearchIndex();
+  try {
+    recordDraftDiscardedAfterCommit({
+      actorParticipantId: input.actorParticipantId,
+      action: "blog.draft_discarded",
+      targetType: "blog_post",
+      targetId: existing.postId,
+      scope: { scopeType: "blog", scopeId: existing.postId },
+      beforeSummary: "status=draft;publishedVersion=0",
+      afterSummary: "deleted",
+    });
+  } catch {
+    // The deletion is already committed. A best-effort audit failure does not roll it back.
   }
 
-  await deleteBlogCommentsByPostIds([existing.postId]);
-  await deleteBlogReactionsByPostIds([existing.postId]);
-  await deleteBlogPublicationDeliveriesByPostIds([existing.postId]);
-  await deleteBlogPostContentTranslations([existing.postId]);
-  invalidateGlobalSearchIndex();
-  recordAdministrationAuditBestEffort({
-    actorParticipantId: input.actorParticipantId,
-    action: "blog.draft_discarded",
-    targetType: "blog_post",
-    targetId: existing.postId,
-    scope: { scopeType: "blog", scopeId: existing.postId },
-    beforeSummary: "status=draft;publishedVersion=0",
-    afterSummary: "deleted",
-  });
-
-  return { postId: existing.postId };
+  return committed;
 }
 
 export async function archiveBlogPost(input: {
