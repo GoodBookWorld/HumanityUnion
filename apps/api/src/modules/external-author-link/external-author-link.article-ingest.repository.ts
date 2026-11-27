@@ -1,9 +1,15 @@
-import type { BlogExternalVideoProvider, BlogPostStatus } from "@hu/types";
+import type { BlogExternalVideoProvider, BlogPost, BlogPostStatus } from "@hu/types";
 import type { ClientSession } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
+import { runMongoTransaction } from "../../infrastructure/mongodb/mongo-transaction.js";
+import {
+  claimBlogPostForArticleDelivery,
+  findBlogPostById,
+  insertBlogPost,
+} from "../blog/persistence/blog.repository.js";
 import { INTEGRITY_MEDIA_SOURCE } from "./external-author-link.constants.js";
 
 export type ArticleDeliveryPhase = "creating" | "complete" | "held";
@@ -450,13 +456,121 @@ function contentRevisionUpdate(input: {
   };
 }
 
+export class ArticleDeliveryTargetMissingError extends Error {
+  readonly code = "article_delivery_target_missing";
+
+  constructor() {
+    super("The Blog post for this article delivery no longer exists.");
+    this.name = "ArticleDeliveryTargetMissingError";
+  }
+}
+
+let bindBarrierForTests: (() => Promise<void>) | null = null;
+
+export function setArticleDeliveryBindBarrierForTests(
+  barrier: (() => Promise<void>) | null,
+): void {
+  if (process.env.NODE_TEST_ENV !== "true") {
+    throw new Error("Article delivery test controls are available only when NODE_TEST_ENV=true.");
+  }
+  bindBarrierForTests = barrier;
+}
+
+/**
+ * Inserts a new ingest draft and stores its id on the delivery row in one
+ * transaction. The draft is not visible until the delivery references it.
+ */
+export async function commitNewArticleDraftDelivery(input: {
+  post: BlogPost;
+  publicationId: string;
+  status: BlogPostStatus;
+}): Promise<string> {
+  if (articleDeliveryUsesMemory()) {
+    await insertBlogPost(input.post);
+    await updateArticleDeliveryPhase({
+      publicationId: input.publicationId,
+      postId: input.post.postId,
+      status: input.status,
+      phase: "held",
+    });
+    return input.post.postId;
+  }
+
+  return runMongoTransaction(async (session) => {
+    await insertBlogPost(input.post, { session });
+    await updateArticleDeliveryPhase({
+      publicationId: input.publicationId,
+      postId: input.post.postId,
+      status: input.status,
+      phase: "held",
+      session,
+    });
+    return input.post.postId;
+  });
+}
+
 /** Updates delivery progress without replacing the accepted cover fields. */
 export async function updateArticleDeliveryPhase(input: {
   publicationId: string;
   postId: string | null;
   status: BlogPostStatus | null;
   phase: ArticleDeliveryPhase;
+  session?: ClientSession;
 }): Promise<void> {
+  if (input.postId && articleDeliveryUsesMemory()) {
+    const post = await findBlogPostById(input.postId);
+    if (!post) {
+      throw new ArticleDeliveryTargetMissingError();
+    }
+  }
+
+  if (input.postId && !articleDeliveryUsesMemory()) {
+    if (input.session) {
+      await bindArticleDeliveryToPost(input, input.session);
+      return;
+    }
+    await runMongoTransaction(async (session) => {
+      await bindArticleDeliveryToPost(input, session);
+      return true;
+    });
+    return;
+  }
+
+  await writeArticleDeliveryPhase(input, input.session);
+}
+
+async function bindArticleDeliveryToPost(
+  input: {
+    publicationId: string;
+    postId: string | null;
+    status: BlogPostStatus | null;
+    phase: ArticleDeliveryPhase;
+  },
+  session: ClientSession,
+): Promise<void> {
+  const claimed = await claimBlogPostForArticleDelivery({
+    postId: input.postId ?? "",
+    publicationId: input.publicationId,
+    session,
+  });
+  if (!claimed) {
+    throw new ArticleDeliveryTargetMissingError();
+  }
+  if (process.env.NODE_TEST_ENV === "true" && bindBarrierForTests) {
+    await bindBarrierForTests();
+  }
+  await writeArticleDeliveryPhase(input, session);
+}
+
+async function writeArticleDeliveryPhase(
+  input: {
+    publicationId: string;
+    postId: string | null;
+    status: BlogPostStatus | null;
+    phase: ArticleDeliveryPhase;
+  },
+  session?: ClientSession,
+): Promise<void> {
   const updatedAt = new Date().toISOString();
   if (articleDeliveryUsesMemory()) {
     const key = deliveryKey(INTEGRITY_MEDIA_SOURCE, input.publicationId);
@@ -484,6 +598,7 @@ export async function updateArticleDeliveryPhase(input: {
         updatedAt,
       },
     },
+    session ? { session } : {},
   );
   if (result.matchedCount === 0) {
     throw new Error("article_delivery_missing");

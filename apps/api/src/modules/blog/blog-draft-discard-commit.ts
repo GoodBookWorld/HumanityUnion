@@ -65,10 +65,16 @@ const testControls: {
   failure: DraftDiscardFailure | null;
   auditAttempts: number;
   auditError: Error | null;
+  beforeDelete: (() => Promise<void>) | null;
+  afterDelete: (() => Promise<void>) | null;
+  callbackError: Error | null;
 } = {
   failure: null,
   auditAttempts: 0,
   auditError: null,
+  beforeDelete: null,
+  afterDelete: null,
+  callbackError: null,
 };
 
 function assertDraftDiscardTestControls(): void {
@@ -91,6 +97,26 @@ export function setDraftDiscardAuditFailureForTests(error: Error | null): void {
 export function draftDiscardAuditAttemptsForTests(): number {
   assertDraftDiscardTestControls();
   return testControls.auditAttempts;
+}
+
+export function setDraftDiscardBeforeDeleteForTests(
+  barrier: (() => Promise<void>) | null,
+): void {
+  assertDraftDiscardTestControls();
+  testControls.beforeDelete = barrier;
+}
+
+export function setDraftDiscardAfterDeleteForTests(
+  barrier: (() => Promise<void>) | null,
+): void {
+  assertDraftDiscardTestControls();
+  testControls.afterDelete = barrier;
+}
+
+/** Consumed once, inside the transaction callback, so driver retries can be observed. */
+export function setDraftDiscardCallbackErrorForTests(error: Error | null): void {
+  assertDraftDiscardTestControls();
+  testControls.callbackError = error;
 }
 
 export function recordDraftDiscardedAfterCommit(input: AdministrationAuditAppendInput): void {
@@ -143,6 +169,11 @@ async function discardUnpublishedDraftInTransaction(
   },
   session?: ClientSession,
 ): Promise<{ postId: string }> {
+  if (process.env.NODE_TEST_ENV === "true" && testControls.callbackError) {
+    const error = testControls.callbackError;
+    testControls.callbackError = null;
+    throw error;
+  }
   const current = await findBlogPostById(input.postId, { session });
   if (!current || current.authorParticipantId !== input.authorParticipantId) {
     throw new BlogNotFoundError();
@@ -163,12 +194,20 @@ async function discardUnpublishedDraftInTransaction(
     throw new BlogConflictError(DRAFT_CHANGED_CONFLICT);
   }
 
+  if (process.env.NODE_TEST_ENV === "true" && testControls.beforeDelete) {
+    await testControls.beforeDelete();
+  }
+
   const deleted = await deleteNeverPublishedOwnedDraft({
     postId: input.postId,
     authorParticipantId: input.authorParticipantId,
     expectedUpdatedAt: input.expectedUpdatedAt,
     session,
   });
+  if (process.env.NODE_TEST_ENV === "true" && testControls.afterDelete) {
+    await testControls.afterDelete();
+  }
+
   if (!deleted) {
     const raced = await findBlogPostById(input.postId, { session });
     if (!raced || raced.authorParticipantId !== input.authorParticipantId) {

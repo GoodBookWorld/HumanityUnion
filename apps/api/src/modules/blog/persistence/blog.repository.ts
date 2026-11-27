@@ -127,6 +127,30 @@ export async function insertBlogPost(
   }
 }
 
+/**
+ * Marks the post as the parent of an Integrity Media delivery inside the
+ * caller's transaction. A missing post returns false and must abort that
+ * transaction before the delivery row stores the post id.
+ */
+export async function claimBlogPostForArticleDelivery(input: {
+  postId: string;
+  publicationId: string;
+  session?: ClientSession;
+}): Promise<boolean> {
+  const memory = blogMemory();
+  if (memory) {
+    return memory.posts.has(input.postId);
+  }
+
+  await ensureBlogMongoReady();
+  const result = await postsCollection().updateOne(
+    { postId: input.postId },
+    { $set: { integrityMediaPublicationId: input.publicationId } },
+    input.session ? { session: input.session } : {},
+  );
+  return result.matchedCount === 1;
+}
+
 export async function replaceBlogPost(
   post: BlogPost,
   options: RepositorySessionOptions = {},
@@ -448,6 +472,7 @@ export async function deleteNeverPublishedOwnedDraft(input: {
       administrativelyBlocked: { $ne: true },
       "externalCover.source": { $ne: "integrity-media" },
       "externalVideo.source": { $ne: "integrity-media" },
+      integrityMediaPublicationId: { $exists: false },
       "editorialHistory.action": { $nin: [...DRAFT_DISCARD_BLOCKING_HISTORY] },
     },
     input.session ? { session: input.session } : {},

@@ -262,12 +262,12 @@ function assertCanMutatePost(input: {
   }
 }
 
-export async function createBlogDraft(input: {
+export async function prepareUnpublishedBlogDraft(input: {
   actorParticipantId: string;
   actorDisplayName?: string;
   role?: AuthRole;
   body: unknown;
-}): Promise<BlogAuthorWorkspacePost> {
+}): Promise<BlogPost> {
   const capabilities = await resolveBlogCapabilities({
     participantId: input.actorParticipantId,
     role: input.role,
@@ -295,7 +295,7 @@ export async function createBlogDraft(input: {
   applySafetyGate(safety, "store");
 
   const now = new Date().toISOString();
-  const post: BlogPost = {
+  return {
     postId: `blog-${randomUUID()}`,
     authorParticipantId: input.actorParticipantId,
     authorDisplayNameSnapshot: (input.actorDisplayName ?? "Participant").trim() || "Participant",
@@ -318,7 +318,15 @@ export async function createBlogDraft(input: {
       : {}),
     ...(gatedOptimization ? { optimization: gatedOptimization } : {}),
   };
+}
 
+export async function createBlogDraft(input: {
+  actorParticipantId: string;
+  actorDisplayName?: string;
+  role?: AuthRole;
+  body: unknown;
+}): Promise<BlogAuthorWorkspacePost> {
+  const post = await prepareUnpublishedBlogDraft(input);
   await insertBlogPost(post);
   return toBlogAuthorWorkspacePost(post);
 }
@@ -1358,7 +1366,11 @@ export async function discardUnpublishedBlogDraft(input: {
     authorParticipantId: input.actorParticipantId,
     expectedUpdatedAt: input.expectedUpdatedAt.trim(),
   });
-  invalidateGlobalSearchIndex();
+  try {
+    invalidateGlobalSearchIndex();
+  } catch {
+    // The deletion is already committed. Search refresh stays outside the transaction.
+  }
   try {
     recordDraftDiscardedAfterCommit({
       actorParticipantId: input.actorParticipantId,

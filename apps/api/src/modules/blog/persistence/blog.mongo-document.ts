@@ -48,6 +48,12 @@ export interface BlogPostMongoDocument {
   legacy?: BlogPostLegacyMigration;
   /** Pack 16C */
   optimization?: BlogPost["optimization"];
+  /**
+   * HU-UX-01F.2 — present only while an article-delivery row is being bound
+   * to this post. The BlogPost projection does not read it. The write exists
+   * so a competing draft discard conflicts on this document.
+   */
+  integrityMediaPublicationId?: string;
 }
 
 export interface BlogCapabilityGrantMongoDocument {

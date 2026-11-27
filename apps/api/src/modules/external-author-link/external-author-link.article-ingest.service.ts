@@ -11,7 +11,7 @@ import {
 
 import { isBlogAuthorAdministrativelyBlocked } from "../blog/admin-publishing.service.js";
 import { blogHtmlToPlainText } from "../blog/blog-content-sanitize.js";
-import { createBlogDraft, submitBlogPostForReview } from "../blog/blog.service.js";
+import { prepareUnpublishedBlogDraft, submitBlogPostForReview } from "../blog/blog.service.js";
 import { ensureBlogCategoriesSeeded, isActiveBlogCategoryId } from "../blog/blog-categories.js";
 import {
   BlogAccessDeniedError,
@@ -45,6 +45,7 @@ import {
   ArticleDeliveryDuplicateError,
   compareAndSetArticleContent,
   compareAndSetArticleCover,
+  commitNewArticleDraftDelivery,
   findArticleDelivery,
   insertArticleDelivery,
   releaseArticleDeliveryWithoutPost,
@@ -758,7 +759,7 @@ async function createAndSubmit(
   let postId = claimed?.postId ?? null;
   try {
     if (!postId) {
-      const draft = await createBlogDraft({
+      const prepared = await prepareUnpublishedBlogDraft({
         actorParticipantId: input.article.huMemberId,
         actorDisplayName: "Participant",
         body: {
@@ -771,12 +772,10 @@ async function createAndSubmit(
           tags: [],
         },
       });
-      postId = draft.postId;
-      await saveDeliveryPhase({
+      postId = await commitNewArticleDraftDelivery({
+        post: prepared,
         publicationId: input.article.publicationId,
-        postId,
-        status: draft.status,
-        phase: "held",
+        status: prepared.status,
       });
     }
 
