@@ -1,0 +1,5 @@
+.contextual-action-feedback {
+  margin-block-start: var(--hu-space-2, 0.5rem);
+  min-width: 0;
+  max-width: 100%;
+}

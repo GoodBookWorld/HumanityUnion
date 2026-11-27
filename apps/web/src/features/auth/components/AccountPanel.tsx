@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -22,7 +22,6 @@ import { AccountSecuritySection } from "./AccountSecuritySection";
 import { AccountDeletionSection } from "../../account-deletion/AccountDeletionSection";
 import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
 import { ContextualActionFeedback } from "./ContextualActionFeedback";
-import { revealContextualFeedback } from "../reveal-contextual-feedback";
 import "./account-panel.css";
 import "../../administration/components/admin-panel.css";
 
@@ -46,7 +45,6 @@ export function AccountPanel() {
     variant: "success" | "error";
     text: string;
   } | null>(null);
-  const emailFeedbackRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [newEmail, setNewEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -84,13 +82,6 @@ export function AccountPanel() {
     // Intentionally load once on mount; avoid re-fetch when translator identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (!emailFeedback) {
-      return;
-    }
-    revealContextualFeedback(emailFeedbackRef.current);
-  }, [emailFeedback]);
 
   async function handleLogout() {
     await logout();
@@ -261,18 +252,15 @@ export function AccountPanel() {
             </Button>
           </div>
           {emailFeedback ? (
-            <div ref={emailFeedbackRef} className="account-panel__action-feedback">
-              <AuthFeedbackMessage
-                variant={emailFeedback.variant}
-                title={
-                  emailFeedback.variant === "success"
-                    ? t("accountUpdate")
-                    : t("accountActionFailed")
-                }
-              >
-                <p>{emailFeedback.text}</p>
-              </AuthFeedbackMessage>
-            </div>
+            <ContextualActionFeedback
+              variant={emailFeedback.variant}
+              title={
+                emailFeedback.variant === "success" ? t("accountUpdate") : t("accountActionFailed")
+              }
+              noticeKey={`${emailFeedback.variant}:${emailFeedback.text}`}
+            >
+              <p>{emailFeedback.text}</p>
+            </ContextualActionFeedback>
           ) : null}
         </form>
       </ProfileSection>

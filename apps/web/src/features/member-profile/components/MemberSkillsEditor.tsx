@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { MAX_MEMBER_SKILL_LABEL_LENGTH, MAX_MEMBER_SKILLS } from "../member-profile-limits";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../use-save-button-phase";
 
@@ -55,6 +56,8 @@ export function MemberSkillsEditor({
   const [draft, setDraft] = useState("");
   const { phase, isBusy, runSave } = useSaveButtonPhase();
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const saveErrorRef = useContextualActionReveal(saveError);
 
   function handleAddSkill(): void {
     const trimmed = normalizeSkillInput(draft);
@@ -91,7 +94,11 @@ export function MemberSkillsEditor({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
+    if (isBusy) {
+      return;
+    }
     setError(null);
+    setSaveError(null);
 
     try {
       await runSave(async () => {
@@ -99,8 +106,8 @@ export function MemberSkillsEditor({
         onChange(normalized);
         await onSave(normalized);
       });
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t("saveError"));
+    } catch (saveFailure) {
+      setSaveError(saveFailure instanceof Error ? saveFailure.message : t("saveError"));
     }
   }
 
@@ -171,6 +178,13 @@ export function MemberSkillsEditor({
       <Button type="submit" variant="primary" disabled={disabled || isBusy} ariaLive="polite">
         {resolveSaveButtonLabel(phase, t("save"))}
       </Button>
+      {saveError ? (
+        <div ref={saveErrorRef} className="contextual-action-feedback">
+          <p className="member-skills-editor__error" role="alert">
+            {saveError}
+          </p>
+        </div>
+      ) : null}
     </form>
   );
 }

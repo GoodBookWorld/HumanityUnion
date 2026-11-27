@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { PLATFORM_SOCIAL_NETWORK_ICON_PATHS } from "../../platform-social-accounts/platform-social-network-icons";
 import { resolveSaveButtonLabel, type SaveButtonPhase } from "../use-save-button-phase";
 
@@ -66,6 +67,7 @@ interface MemberProfessionalLinksSectionProps extends MemberProfessionalLinksVal
   disabled?: boolean;
   /** Profile UX Pack 02 Part 3 — drives the reusable Save-button feedback. */
   phase?: SaveButtonPhase;
+  error?: string | null;
   onChange: (patch: Partial<MemberProfessionalLinksValues>) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }
@@ -79,11 +81,13 @@ export function MemberProfessionalLinksSection({
   xUrl,
   disabled = false,
   phase = "idle",
+  error = null,
   onChange,
   onSubmit,
 }: MemberProfessionalLinksSectionProps) {
   const t = useTranslations("memberProfile.links");
   const busy = phase !== "idle";
+  const errorRef = useContextualActionReveal(error);
   const values: MemberProfessionalLinksValues = {
     website,
     linkedinUrl,
@@ -127,6 +131,13 @@ export function MemberProfessionalLinksSection({
       <Button type="submit" variant="primary" disabled={disabled || busy} ariaLive="polite">
         {resolveSaveButtonLabel(phase, t("save"))}
       </Button>
+      {error ? (
+        <div ref={errorRef} className="contextual-action-feedback">
+          <p className="member-profile-workspace__error" role="alert">
+            {error}
+          </p>
+        </div>
+      ) : null}
     </form>
   );
 }

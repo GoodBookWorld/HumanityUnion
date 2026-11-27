@@ -14,6 +14,7 @@ import { useBrandSiteName } from "../../brand-localization/useLocalizedBrand";
 
 import { Button } from "../../../design-system/components/Button";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { trapTabKey } from "../../../design-system/focus-trap";
 import { ApiRequestError, formatAuthFormError } from "../../../lib/api-client";
 import { getMyMemberProfile } from "../../member-profile/member-profile-api";
@@ -128,6 +129,8 @@ export function RrpApplicationModal({
   const [busy, setBusy] = useState<BusyAction>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const actionErrorRef = useContextualActionReveal(error);
+  const actionStatusRef = useContextualActionReveal(statusMessage && view !== "success" ? statusMessage : null);
   const [baselineForm, setBaselineForm] = useState<RrpApplicationFormState | null>(null);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation>(null);
@@ -527,17 +530,6 @@ export function RrpApplicationModal({
               {t("close")}
             </Button>
           </header>
-
-          {error ? (
-            <p className="rrp-application-modal__error" role="alert">
-              {error}
-            </p>
-          ) : null}
-          {statusMessage && view !== "success" ? (
-            <p className="rrp-application-modal__status" role="status">
-              {statusMessage}
-            </p>
-          ) : null}
 
           {view === "loading" ? (
             <p className="rrp-application-modal__status" role="status">
@@ -951,6 +943,20 @@ export function RrpApplicationModal({
             <Button type="button" variant="secondary" onClick={requestClose}>
               {t("close")}
             </Button>
+          ) : null}
+          {error ? (
+            <div ref={actionErrorRef} className="contextual-action-feedback">
+              <p className="rrp-application-modal__error" role="alert">
+                {error}
+              </p>
+            </div>
+          ) : null}
+          {statusMessage && view !== "success" ? (
+            <div ref={actionStatusRef} className="contextual-action-feedback">
+              <p className="rrp-application-modal__status" role="status">
+                {statusMessage}
+              </p>
+            </div>
           ) : null}
         </footer>
       </div>

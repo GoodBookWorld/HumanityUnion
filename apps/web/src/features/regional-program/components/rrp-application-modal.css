@@ -265,6 +265,11 @@
   padding: var(--hu-space-4, 1rem) var(--hu-space-5, 1.25rem);
 }
 
+.rrp-application-modal__actions > .contextual-action-feedback {
+  flex-basis: 100%;
+  text-align: start;
+}
+
 .rrp-application-modal__submit-blocked {
   display: grid;
   flex-basis: 100%;

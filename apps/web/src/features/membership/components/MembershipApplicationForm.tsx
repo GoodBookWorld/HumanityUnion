@@ -9,6 +9,7 @@ import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
 import { SectionHeader } from "../../../design-system/components/SectionHeader";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { toGeographyCountryOptions } from "@hu/geography";
 import { formatAuthFormError } from "../../../lib/api-client";
 import { getMyMemberProfile } from "../../member-profile/member-profile-api";
@@ -44,6 +45,8 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const messageRef = useContextualActionReveal(message);
+  const errorRef = useContextualActionReveal(error);
   const [participationCountryCodes, setParticipationCountryCodes] = useState<string[]>(() =>
     resolveParticipationCodes(
       payload.application.countryCode,
@@ -101,6 +104,9 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
     payload.membership.status === "active_member";
 
   async function handleSave(submit: boolean) {
+    if (submitting) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
     setMessage(null);
@@ -208,13 +214,6 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
               </label>
             </fieldset>
 
-            {message ? <StatusBanner title={t("application.successTitle")} message={message} /> : null}
-            {error ? (
-              <div className="membership-application-form__error" role="alert">
-                {error}
-              </div>
-            ) : null}
-
             <div className="membership-application-form__actions">
               <Button
                 type="button"
@@ -228,6 +227,18 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
                 {t("application.submit")}
               </Button>
             </div>
+            {message ? (
+              <div ref={messageRef} className="contextual-action-feedback">
+                <StatusBanner title={t("application.successTitle")} message={message} />
+              </div>
+            ) : null}
+            {error ? (
+              <div ref={errorRef} className="contextual-action-feedback">
+                <div className="membership-application-form__error" role="alert">
+                  {error}
+                </div>
+              </div>
+            ) : null}
           </form>
         )}
       </Card>

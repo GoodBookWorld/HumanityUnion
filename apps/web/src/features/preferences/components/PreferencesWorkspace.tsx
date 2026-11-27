@@ -15,6 +15,7 @@ import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
 import { ApiUnavailableState } from "../../../design-system/components/ApiUnavailableState";
 import { isAuthenticationRequiredError, isApiUnavailableError } from "../../../lib/api-client";
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { applyPresentationLocale } from "../../language/apply-presentation-locale";
 import { buildParticipantReadingLanguagePatch } from "../../language/persist-participant-reading-language";
@@ -99,6 +100,8 @@ export function PreferencesWorkspace() {
   const [languageOptions, setLanguageOptions] = useState<readonly SelectablePublicLanguage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const saveErrorRef = useContextualActionReveal(saveError);
   const [authRequired, setAuthRequired] = useState(false);
   const [apiUnavailable, setApiUnavailable] = useState(false);
 
@@ -176,11 +179,11 @@ export function PreferencesWorkspace() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!preferences) {
+    if (!preferences || savePhase.isBusy) {
       return;
     }
 
-    setError(null);
+    setSaveError(null);
 
     try {
       await savePhase.runSave(async () => {
@@ -219,7 +222,7 @@ export function PreferencesWorkspace() {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
       } else {
-        setError(saveError instanceof Error ? saveError.message : t("saveError"));
+        setSaveError(saveError instanceof Error ? saveError.message : t("saveError"));
       }
     }
   }
@@ -257,12 +260,6 @@ export function PreferencesWorkspace() {
 
   return (
     <form className="preferences-workspace" onSubmit={(event) => void handleSubmit(event)}>
-      {error ? (
-        <p className="preferences-workspace__error" role="alert">
-          {error}
-        </p>
-      ) : null}
-
       <SurfaceAssistantEntry
         surfaceId="preferences"
         label={tExperience("assistant.entry.preferencesLauncher", { siteName })}
@@ -729,6 +726,13 @@ export function PreferencesWorkspace() {
           })}
         </Button>
       </div>
+      {saveError ? (
+        <div ref={saveErrorRef} className="contextual-action-feedback">
+          <p className="preferences-workspace__error" role="alert">
+            {saveError}
+          </p>
+        </div>
+      ) : null}
     </form>
   );
 }

@@ -39,7 +39,7 @@ describe("HU-UX-01D Change Email contextual feedback", () => {
 
   it("renders success and error feedback immediately after the Change Email submit control", () => {
     const buttonAt = emailSection.indexOf('{t("requestEmailChange")}');
-    const feedbackAt = emailSection.indexOf("account-panel__action-feedback");
+    const feedbackAt = emailSection.indexOf("<ContextualActionFeedback");
     assert.ok(buttonAt >= 0);
     assert.ok(feedbackAt > buttonAt);
     assert.match(emailSection, /disabled=\{submitting \|\| passwordPending\}/);
@@ -49,7 +49,7 @@ describe("HU-UX-01D Change Email contextual feedback", () => {
     assert.match(emailHandler, /variant: "success", text: t\("checkNewEmailInbox"\)/);
     assert.match(emailHandler, /variant: "error"/);
     assert.match(emailHandler, /t\("unableToRequestEmailChange"\)/);
-    assert.match(emailSection, /AuthFeedbackMessage/);
+    assert.match(emailSection, /ContextualActionFeedback/);
     assert.match(emailSection, /emailFeedback\.variant === "success"/);
     assert.match(emailSection, /t\("accountUpdate"\)/);
     assert.match(emailSection, /t\("accountActionFailed"\)/);
@@ -103,10 +103,11 @@ describe("HU-UX-01D Change Email contextual feedback", () => {
   });
 
   it("scrolls the feedback node only when it is outside the viewport", () => {
-    const effect = sliceBetween(panel, "useEffect(() => {\n    if (!emailFeedback)", "async function handleLogout");
-    assert.match(effect, /revealContextualFeedback\(emailFeedbackRef\.current\)/);
-    assert.match(effect, /\}, \[emailFeedback\]\)/);
-    assert.equal(panel.match(/revealContextualFeedback\(/g)?.length, 1);
+    const contextual = read("features/auth/components/ContextualActionFeedback.tsx");
+    assert.match(emailSection, /noticeKey=\{`\$\{emailFeedback\.variant\}:\$\{emailFeedback\.text\}`\}/);
+    assert.match(contextual, /queueContextualFeedbackReveal\(ref\.current\)/);
+    assert.match(contextual, /\}, \[noticeKey\]\)/);
+    assert.equal(panel.match(/revealContextualFeedback\(/g)?.length ?? 0, 0);
 
     assert.equal(
       isFeedbackFullyInViewport({ top: 10, left: 10, bottom: 80, right: 200 }, { width: 390, height: 700 }),

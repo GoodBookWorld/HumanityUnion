@@ -21,6 +21,7 @@ import { Button } from "../../../design-system/components/Button";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { HelperText } from "../../../design-system/components/HelperText";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { formatAuthFormError } from "../../../lib/api-client";
 import {
   resolveSaveButtonLabel,
@@ -138,6 +139,7 @@ export function BlogPostEditor({
   const [administrativelyBlocked] = useState(initialPost?.administrativelyBlocked === true);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const actionErrorRef = useContextualActionReveal(error);
   const [saveFailed, setSaveFailed] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
@@ -254,6 +256,9 @@ export function BlogPostEditor({
   }
 
   async function handleSaveDraft() {
+    if (savePhase.isBusy || busyAction !== null) {
+      return;
+    }
     setError(null);
     setSaveFailed(false);
     try {
@@ -278,6 +283,9 @@ export function BlogPostEditor({
   }
 
   async function handleSubmit() {
+    if (busyAction !== null || savePhase.isBusy) {
+      return;
+    }
     setBusyAction("submit");
     setError(null);
     try {
@@ -306,6 +314,9 @@ export function BlogPostEditor({
   }
 
   async function handlePublish() {
+    if (busyAction !== null || savePhase.isBusy) {
+      return;
+    }
     setBusyAction("publish");
     setError(null);
     try {
@@ -399,9 +410,6 @@ export function BlogPostEditor({
       ) : null}
 
       {safety ? <StatusBanner title={safety.title} message={safety.message} /> : null}
-      {error ? (
-        <StatusBanner title={t("editor.banners.actionFailed")} message={error} />
-      ) : null}
 
       <div className="blog-post-editor__chrome">
         <p className="blog-post-editor__save-status" aria-live="polite">
@@ -455,6 +463,11 @@ export function BlogPostEditor({
           </Link>
         </div>
       </div>
+      {error ? (
+        <div ref={actionErrorRef} className="contextual-action-feedback">
+          <StatusBanner title={t("editor.banners.actionFailed")} message={error} />
+        </div>
+      ) : null}
 
       <div className="blog-post-editor__layout">
         <div className="blog-post-editor__main">

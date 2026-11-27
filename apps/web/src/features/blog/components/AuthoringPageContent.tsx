@@ -12,6 +12,7 @@ import { BLOG_CATEGORIES } from "@hu/types";
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import {
   formatAuthFormError,
   isAuthenticationRequiredError,
@@ -124,6 +125,7 @@ export function AuthoringPageContent() {
   const [submitting, setSubmitting] = useState(false);
   const [submitPhase, setSubmitPhase] = useState<"idle" | "submitting" | "success">("idle");
   const [formError, setFormError] = useState<string | null>(null);
+  const formErrorRef = useContextualActionReveal(formError);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [motivation, setMotivation] = useState("");
@@ -176,7 +178,7 @@ export function AuthoringPageContent() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!state) {
+    if (!state || submitting) {
       return;
     }
 
@@ -425,12 +427,6 @@ export function AuthoringPageContent() {
               </p>
             ) : null}
 
-            {formError ? (
-              <p className="authoring-page__error" role="alert">
-                {formError}
-              </p>
-            ) : null}
-
             <Button
               type="submit"
               variant="primary"
@@ -446,6 +442,13 @@ export function AuthoringPageContent() {
                     ? t("application.resubmit")
                     : t("application.submit")}
             </Button>
+            {formError ? (
+              <div ref={formErrorRef} className="contextual-action-feedback">
+                <p className="authoring-page__error" role="alert">
+                  {formError}
+                </p>
+              </div>
+            ) : null}
           </form>
         </Card>
       ) : null}

@@ -29,6 +29,7 @@ import { ProfileAssistantEntry } from "../../humanity-union-assistant";
 import { MembershipProfileSection } from "../../membership/components/MembershipProfileSection";
 import { MemberSettingsSummaries } from "./MemberSettingsSummaries";
 import { MemberSkillsEditor } from "./MemberSkillsEditor";
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { MemberProfessionalLinksSection } from "./MemberProfessionalLinksSection";
 
 import "./member-profile-workspace.css";
@@ -61,6 +62,11 @@ export function MemberProfileWorkspace() {
   const [statistics, setStatistics] = useState<ParticipantStatistics | null>(null);
   const [statisticsLoading, setStatisticsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [linksError, setLinksError] = useState<string | null>(null);
+  const [privacyError, setPrivacyError] = useState<string | null>(null);
+  const profileErrorRef = useContextualActionReveal(profileError);
+  const privacyErrorRef = useContextualActionReveal(privacyError);
   const [apiUnavailable, setApiUnavailable] = useState(false);
   const [authRequired, setAuthRequired] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -137,11 +143,11 @@ export function MemberProfileWorkspace() {
 
   async function handleProfileSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!profile) {
+    if (!profile || profilePhase.isBusy) {
       return;
     }
 
-    setError(null);
+    setProfileError(null);
 
     try {
       await profilePhase.runSave(async () => {
@@ -161,7 +167,7 @@ export function MemberProfileWorkspace() {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
       } else {
-        setError(saveError instanceof Error ? saveError.message : t("saveProfileError"));
+        setProfileError(saveError instanceof Error ? saveError.message : t("saveProfileError"));
       }
     }
   }
@@ -180,11 +186,11 @@ export function MemberProfileWorkspace() {
     event: React.FormEvent<HTMLFormElement>,
   ): Promise<void> {
     event.preventDefault();
-    if (!profile) {
+    if (!profile || linksPhase.isBusy) {
       return;
     }
 
-    setError(null);
+    setLinksError(null);
 
     try {
       await linksPhase.runSave(async () => {
@@ -203,18 +209,18 @@ export function MemberProfileWorkspace() {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
       } else {
-        setError(saveError instanceof Error ? saveError.message : t("saveLinksError"));
+        setLinksError(saveError instanceof Error ? saveError.message : t("saveLinksError"));
       }
     }
   }
 
   async function handlePrivacySave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!privacy) {
+    if (!privacy || privacyPhase.isBusy) {
       return;
     }
 
-    setError(null);
+    setPrivacyError(null);
 
     try {
       await privacyPhase.runSave(async () => {
@@ -225,7 +231,7 @@ export function MemberProfileWorkspace() {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
       } else {
-        setError(saveError instanceof Error ? saveError.message : t("savePrivacyError"));
+        setPrivacyError(saveError instanceof Error ? saveError.message : t("savePrivacyError"));
       }
     }
   }
@@ -265,12 +271,6 @@ export function MemberProfileWorkspace() {
 
   return (
     <div className="member-profile-workspace">
-      {error ? (
-        <p className="member-profile-workspace__error" role="alert">
-          {error}
-        </p>
-      ) : null}
-
       <ProfileAssistantEntry />
 
       <nav className="member-profile-workspace__sections" aria-label={t("sectionsAria")}>
@@ -344,6 +344,13 @@ export function MemberProfileWorkspace() {
           <Button type="submit" variant="primary" disabled={profilePhase.isBusy} ariaLive="polite">
             {resolveSaveButtonLabel(profilePhase.phase, t("saveProfile"))}
           </Button>
+          {profileError ? (
+            <div ref={profileErrorRef} className="contextual-action-feedback">
+              <p className="member-profile-workspace__error" role="alert">
+                {profileError}
+              </p>
+            </div>
+          ) : null}
         </form>
       </ProfileSection>
 
@@ -364,6 +371,7 @@ export function MemberProfileWorkspace() {
           instagramUrl={profile.instagramUrl}
           xUrl={profile.xUrl}
           phase={linksPhase.phase}
+          error={linksError}
           onChange={(patch) => setProfile({ ...profile, ...patch })}
           onSubmit={handleProfessionalLinksSave}
         />
@@ -559,6 +567,13 @@ export function MemberProfileWorkspace() {
           <Button type="submit" variant="primary" disabled={privacyPhase.isBusy} ariaLive="polite">
             {resolveSaveButtonLabel(privacyPhase.phase, t("savePrivacy"))}
           </Button>
+          {privacyError ? (
+            <div ref={privacyErrorRef} className="contextual-action-feedback">
+              <p className="member-profile-workspace__error" role="alert">
+                {privacyError}
+              </p>
+            </div>
+          ) : null}
         </form>
       </ProfileSection>
 

@@ -291,6 +291,20 @@ The workspace is the primary participation environment. All workspace sections m
 - **Consistent empty states** — every section uses `EmptyState` with title, explanation, and next step
 - **Consistent deferred actions** — disabled buttons use standard opacity (0.55) and standard tooltip text
 
+### Contextual action feedback
+
+Participant action results use `ContextualActionFeedback` (`apps/web/src/features/auth/components/ContextualActionFeedback.tsx`) or the existing message component already beside that action. `StatusBanner` remains the component for persistent status.
+
+- Each action owns its result. Starting one action does not clear an unrelated action.
+- Render the result immediately after that action’s button or button group.
+- Keep pending state on that action and ignore a repeated submit while it is pending. Keep mutual exclusion where two mutations cannot overlap.
+- Announce through one live region: errors use `role="alert"`, and other results use `role="status"`.
+- Reveal a new result only when it is outside the visible area, including a nested scroll container. Use nearest scrolling, instant scrolling when reduced motion is requested, and do not move focus.
+- Keep verification and security instructions until a newer result for that same action replaces them.
+- If success removes the control, render the result in the nearest section that remains.
+- Leave page loading, page-level load failures, empty states, persistent lifecycle or publication status, field validation, notification-center messages, and confirmation dialogs where they are.
+- Use existing translated copy. Support every locale, including right-to-left layout, with logical CSS.
+
 ### Section structure
 
 Every workspace section uses `WorkspaceSectionShell` with:

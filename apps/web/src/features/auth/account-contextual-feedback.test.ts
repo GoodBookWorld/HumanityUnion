@@ -72,7 +72,7 @@ describe("HU-UX-01E.1 account contextual feedback", () => {
 
   it("keeps Change Email feedback after its own submit button", () => {
     const buttonAt = emailSection.indexOf('{t("requestEmailChange")}');
-    const feedbackAt = emailSection.indexOf("account-panel__action-feedback");
+    const feedbackAt = emailSection.indexOf("<ContextualActionFeedback");
     assert.ok(feedbackAt > buttonAt);
     assert.match(emailHandler, /checkNewEmailInbox/);
     assert.match(emailHandler, /requestEmailChange\(newEmail\)/);
@@ -206,12 +206,10 @@ describe("HU-UX-01E.1 account contextual feedback", () => {
   });
 
   it("reveals only a new result, and only the latest result when several appear together", async () => {
-    const emailEffect = sliceBetween(panel, "useEffect(() => {\n    if (!emailFeedback)", "async function handleLogout");
-    assert.match(emailEffect, /revealContextualFeedback\(emailFeedbackRef\.current\)/);
-    assert.match(emailEffect, /\}, \[emailFeedback\]\)/);
+    assert.match(emailSection, /<ContextualActionFeedback/);
     assert.match(contextual, /queueContextualFeedbackReveal\(ref\.current\)/);
     assert.match(contextual, /\}, \[noticeKey\]\)/);
-    assert.equal(panel.match(/revealContextualFeedback\(/g)?.length, 1);
+    assert.equal(panel.match(/revealContextualFeedback\(/g)?.length ?? 0, 0);
 
     const first = installWindow();
     const second = installWindow();
@@ -235,6 +233,9 @@ describe("HU-UX-01E.1 account contextual feedback", () => {
   });
 
   it("uses logical placement for LTR, RTL, desktop, and mobile", () => {
+    const sharedCss = read("features/auth/components/contextual-action-feedback.css");
+    assert.match(sharedCss, /\.contextual-action-feedback \{[^}]*margin-block-start:/s);
+    assert.doesNotMatch(sharedCss, /margin-left|margin-right/);
     assert.match(css, /\.account-panel__action-feedback \{[^}]*margin-block-start:/s);
     assert.match(css, /\.account-panel__form \{\s*display: grid;/);
     assert.doesNotMatch(css, /account-panel__action-feedback[\s\S]*margin-left/);

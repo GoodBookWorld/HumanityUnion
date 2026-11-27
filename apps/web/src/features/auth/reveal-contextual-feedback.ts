@@ -11,9 +11,9 @@ export function isFeedbackFullyInViewport(
 }
 
 /**
- * Scrolls a contextual feedback node into view only when it is outside or
- * partially outside the viewport. Does not move focus. Uses an instant
- * scroll when the user prefers reduced motion.
+ * Scrolls a contextual feedback node into view only when it is outside the
+ * window or clipped by a nested scroll container. Does not move focus.
+ * Uses an instant scroll when the user prefers reduced motion.
  */
 export function revealContextualFeedback(element: HTMLElement | null): boolean {
   if (!element || typeof window === "undefined") {
@@ -26,7 +26,7 @@ export function revealContextualFeedback(element: HTMLElement | null): boolean {
     height: window.innerHeight || document.documentElement?.clientHeight || 0,
   };
 
-  if (isFeedbackFullyInViewport(rect, viewport)) {
+  if (isFeedbackFullyInViewport(rect, viewport) && !isClippedByScrollAncestor(element)) {
     return false;
   }
 
@@ -37,6 +37,28 @@ export function revealContextualFeedback(element: HTMLElement | null): boolean {
     behavior: reduceMotion ? "auto" : "smooth",
   });
   return true;
+}
+
+function isClippedByScrollAncestor(element: HTMLElement): boolean {
+  const rect = element.getBoundingClientRect();
+  let parent = element.parentElement;
+  while (parent) {
+    const style = window.getComputedStyle(parent);
+    const overflow = `${style.overflow} ${style.overflowX} ${style.overflowY}`;
+    if (/(auto|scroll|hidden)/.test(overflow)) {
+      const bounds = parent.getBoundingClientRect();
+      if (
+        rect.top < bounds.top ||
+        rect.left < bounds.left ||
+        rect.bottom > bounds.bottom ||
+        rect.right > bounds.right
+      ) {
+        return true;
+      }
+    }
+    parent = parent.parentElement;
+  }
+  return false;
 }
 
 let queuedReveal: HTMLElement | null = null;
