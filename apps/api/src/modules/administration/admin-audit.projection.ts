@@ -26,6 +26,7 @@ export const ADMINISTRATION_AUDIT_ACTIONS: readonly AdministrationAuditAction[] 
   "blog.publish",
   "blog.publish_after_safety_review",
   "blog.archive",
+  "blog.draft_discarded",
   "blog.update_published",
   "blog.published_correction_started",
   "blog.comment.moderate",

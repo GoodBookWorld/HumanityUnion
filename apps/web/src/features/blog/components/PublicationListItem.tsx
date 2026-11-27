@@ -12,7 +12,7 @@ import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { formatAuthFormError } from "../../../lib/api-client";
 import { resolvePublishingListStatusLabel } from "../blog-workspace-i18n";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
-import { archiveBlogPost, startPublishedCorrection } from "../publishing-api";
+import { archiveBlogPost, discardUnpublishedBlogDraft, startPublishedCorrection } from "../publishing-api";
 import { BlogCoverImage } from "./BlogCoverImage";
 
 function formatDate(value?: string): string {
@@ -32,6 +32,7 @@ export interface PublicationListItemProps {
   /** Pack 13B — Author soft-block disables mutations. */
   mutationsDisabled?: boolean;
   onMutated?: () => void;
+  onDraftDiscarded?: () => void;
 }
 
 export function PublicationListItem({
@@ -39,6 +40,7 @@ export function PublicationListItem({
   canDirectPublish,
   mutationsDisabled = false,
   onMutated,
+  onDraftDiscarded,
 }: PublicationListItemProps) {
   const t = useTranslations("workspace.publishingPage");
   const tBlog = useTranslations("blogPublic");
@@ -46,12 +48,15 @@ export function PublicationListItem({
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [draftDeleteOpen, setDraftDeleteOpen] = useState(false);
+  const [draftActionError, setDraftActionError] = useState<string | null>(null);
   const [correctionOpen, setCorrectionOpen] = useState(false);
 
   const blocked = post.administrativelyBlocked === true;
   const canMutate = !mutationsDisabled && !blocked;
   const editableDraftOrScheduled =
     canMutate && (post.status === "draft" || post.status === "scheduled");
+  const neverPublishedDraft = canMutate && post.status === "draft" && post.publishedVersion === 0;
   const publishedManageable = canMutate && post.status === "published";
   const categoryLabel = resolveBlogCategoryDisplayName(post.categoryId, tBlog);
   const statusLabel = resolvePublishingListStatusLabel(post, t);
@@ -65,6 +70,21 @@ export function PublicationListItem({
       onMutated?.();
     } catch (error) {
       setActionError(formatAuthFormError(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runDraftDelete() {
+    setBusy("delete");
+    setDraftActionError(null);
+    try {
+      await discardUnpublishedBlogDraft(post.postId, post.updatedAt);
+      setDraftDeleteOpen(false);
+      onDraftDiscarded?.();
+      onMutated?.();
+    } catch (error) {
+      setDraftActionError(formatAuthFormError(error));
     } finally {
       setBusy(null);
     }
@@ -123,6 +143,16 @@ export function PublicationListItem({
               {t("actions.edit")}
             </Button>
           ) : null}
+          {neverPublishedDraft ? (
+            <Button
+              type="button"
+              variant="danger"
+              disabled={busy === "delete"}
+              onClick={() => setDraftDeleteOpen(true)}
+            >
+              {t("actions.delete")}
+            </Button>
+          ) : null}
           {publishedManageable && canDirectPublish ? (
             <Button href={`/workspace/publishing/${post.postId}`} variant="primary">
               {t("actions.editCorrect")}
@@ -166,6 +196,11 @@ export function PublicationListItem({
             </Button>
           ) : null}
         </div>
+        {draftActionError ? (
+          <p className="hu-caption publication-list-item__action-feedback" role="alert">
+            {draftActionError}
+          </p>
+        ) : null}
       </div>
 
       <ConfirmDialog
@@ -188,6 +223,17 @@ export function PublicationListItem({
         isConfirming={busy === "delete"}
         onCancel={() => setDeleteOpen(false)}
         onConfirm={() => void runDelete()}
+      />
+
+      <ConfirmDialog
+        isOpen={draftDeleteOpen}
+        title={t("draftDeleteTitle")}
+        description={t("draftDeleteBody")}
+        confirmLabel={busy === "delete" ? t("deleting") : t("draftDeleteConfirm")}
+        destructive
+        isConfirming={busy === "delete"}
+        onCancel={() => setDraftDeleteOpen(false)}
+        onConfirm={() => void runDraftDelete()}
       />
     </Card>
   );

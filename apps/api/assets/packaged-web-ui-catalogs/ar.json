@@ -636,7 +636,12 @@
           "approved": "موافق عليه",
           "declined": "مرفوض"
         }
-      }
+      },
+      "draftDeleteTitle": "حذف هذه المسودة غير المنشورة؟",
+      "draftDeleteBody": "ستُحذف هذه المسودة غير المنشورة. لن تتأثر المقالات المنشورة.",
+      "draftDeleteConfirm": "حذف المسودة",
+      "draftDeletedTitle": "تم حذف المسودة",
+      "draftDeleted": "تم حذف المسودة غير المنشورة."
     },
     "editorialPage": {
       "title": "المراجعة التحريرية",

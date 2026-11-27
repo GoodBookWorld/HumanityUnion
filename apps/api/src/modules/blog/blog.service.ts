@@ -107,6 +107,7 @@ import {
   findBlogAuthorApplicationById,
   findBlogCapabilityGrant,
   findBlogPostById,
+  deleteNeverPublishedOwnedDraft,
   findBlogPostBySlug,
   findLatestBlogAuthorApplication,
   insertBlogAuthorApplication,
@@ -123,6 +124,12 @@ import {
   upsertBlogCapabilityGrant,
 } from "./persistence/blog.repository.js";
 import { isBlogAuthorAdministrativelyBlocked } from "./admin-publishing.service.js";
+import { isIntegrityLinkedBlogPost, isNeverPublishedDraftEligible } from "./blog-draft-discard.js";
+import { deleteBlogCommentsByPostIds } from "./persistence/blog-comment.repository.js";
+import { deleteBlogPublicationDeliveriesByPostIds } from "./persistence/blog-publication-delivery.repository.js";
+import { deleteBlogReactionsByPostIds } from "./persistence/blog-reaction.repository.js";
+import { deleteBlogPostContentTranslations } from "../language/persistence/content-translation.repository.js";
+import { articleDeliveryReferencesBlogPost } from "../external-author-link/external-author-link.article-ingest.repository.js";
 
 export { listBlogCategories, listPublishedBlogPostsForSearch };
 
@@ -1298,6 +1305,84 @@ export async function publishBlogPostAfterSafetyReview(input: {
   });
 
   return toBlogAuthorWorkspacePost(published);
+}
+
+const DRAFT_DISCARD_CONFLICT = "Only an unpublished draft can be deleted.";
+
+export async function discardUnpublishedBlogDraft(input: {
+  postId: string;
+  actorParticipantId: string;
+  role?: AuthRole;
+  expectedUpdatedAt?: string;
+}): Promise<{ postId: string }> {
+  const capabilities = await resolveBlogCapabilities({
+    participantId: input.actorParticipantId,
+    role: input.role,
+  });
+  if (!canCreateBlogDraft(capabilities)) {
+    throw new BlogAccessDeniedError("Author capability is required to delete a draft.");
+  }
+
+  const existing = await findBlogPostById(input.postId);
+  if (!existing || existing.authorParticipantId !== input.actorParticipantId) {
+    throw new BlogNotFoundError();
+  }
+
+  await assertAuthorPublishingAllowed({
+    actorParticipantId: input.actorParticipantId,
+    role: input.role,
+    capabilities,
+  });
+
+  if (existing.administrativelyBlocked === true) {
+    throw new BlogAccessDeniedError(
+      "This publication is blocked by an administrator and cannot be deleted or archived by the Author.",
+    );
+  }
+
+  if (!input.expectedUpdatedAt?.trim()) {
+    throw new BlogValidationError("expectedUpdatedAt is required to delete a draft.");
+  }
+  assertExpectedUpdatedAt(existing, input.expectedUpdatedAt);
+
+  if (isIntegrityLinkedBlogPost(existing) || (await articleDeliveryReferencesBlogPost(existing.postId))) {
+    throw new BlogConflictError(
+      "This draft is linked to Integrity Media and cannot be deleted from Publishing.",
+    );
+  }
+  if (!isNeverPublishedDraftEligible(existing)) {
+    throw new BlogConflictError(DRAFT_DISCARD_CONFLICT);
+  }
+
+  const deleted = await deleteNeverPublishedOwnedDraft({
+    postId: existing.postId,
+    authorParticipantId: input.actorParticipantId,
+    expectedUpdatedAt: input.expectedUpdatedAt,
+  });
+  if (!deleted) {
+    const current = await findBlogPostById(input.postId);
+    if (!current || current.authorParticipantId !== input.actorParticipantId) {
+      throw new BlogNotFoundError();
+    }
+    throw new BlogConflictError("This draft changed and was not deleted.");
+  }
+
+  await deleteBlogCommentsByPostIds([existing.postId]);
+  await deleteBlogReactionsByPostIds([existing.postId]);
+  await deleteBlogPublicationDeliveriesByPostIds([existing.postId]);
+  await deleteBlogPostContentTranslations([existing.postId]);
+  invalidateGlobalSearchIndex();
+  recordAdministrationAuditBestEffort({
+    actorParticipantId: input.actorParticipantId,
+    action: "blog.draft_discarded",
+    targetType: "blog_post",
+    targetId: existing.postId,
+    scope: { scopeType: "blog", scopeId: existing.postId },
+    beforeSummary: "status=draft;publishedVersion=0",
+    afterSummary: "deleted",
+  });
+
+  return { postId: existing.postId };
 }
 
 export async function archiveBlogPost(input: {

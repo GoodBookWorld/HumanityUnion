@@ -57,6 +57,13 @@
   margin-top: 0.75rem;
 }
 
+.publication-list-item__action-feedback,
+.publishing-dashboard__action-feedback {
+  margin-block-start: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* Pack 14C/15B — dominant writing canvas (~72%) + settings rail (~28%) */
 .blog-post-editor--pack14c,
 .blog-post-editor--pack15b {

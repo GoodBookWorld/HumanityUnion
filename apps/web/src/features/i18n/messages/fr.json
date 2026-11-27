@@ -7418,7 +7418,12 @@
       "tabsAria": "Statut de publication",
       "title": "Publication",
       "unavailableTitle": "Publication indisponible",
-      "updated": "Mis à jour {date}"
+      "updated": "Mis à jour {date}",
+      "draftDeleteTitle": "Supprimer ce brouillon non publié ?",
+      "draftDeleteBody": "Ce brouillon non publié sera supprimé. Les articles publiés ne sont pas affectés.",
+      "draftDeleteConfirm": "Supprimer le brouillon",
+      "draftDeletedTitle": "Brouillon supprimé",
+      "draftDeleted": "Le brouillon non publié a été supprimé."
     },
     "requestEmailChange": "Demander un changement d'e-mail",
     "role": "Rôle",

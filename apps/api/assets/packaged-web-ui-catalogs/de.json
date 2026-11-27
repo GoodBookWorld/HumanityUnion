@@ -7418,7 +7418,12 @@
       "tabsAria": "Veröffentlichungsstatus",
       "title": "Veröffentlichung",
       "unavailableTitle": "Veröffentlichung nicht verfügbar",
-      "updated": "Aktualisiert {date}"
+      "updated": "Aktualisiert {date}",
+      "draftDeleteTitle": "Diesen unveröffentlichten Entwurf löschen?",
+      "draftDeleteBody": "Dieser unveröffentlichte Entwurf wird gelöscht. Veröffentlichte Artikel bleiben unverändert.",
+      "draftDeleteConfirm": "Entwurf löschen",
+      "draftDeletedTitle": "Entwurf gelöscht",
+      "draftDeleted": "Der unveröffentlichte Entwurf wurde gelöscht."
     },
     "requestEmailChange": "E-Mail-Änderung anfordern",
     "role": "Rolle",

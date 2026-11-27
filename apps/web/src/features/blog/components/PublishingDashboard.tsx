@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { BlogAuthorWorkspacePostSummary, BlogPostStatus } from "@hu/types";
 
 import { Button } from "../../../design-system/components/Button";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
+import { AuthFeedbackMessage } from "../../auth/components/AuthFeedbackMessage";
+import { revealContextualFeedback } from "../../auth/reveal-contextual-feedback";
 import { formatAuthFormError, isAuthenticationRequiredError } from "../../../lib/api-client";
 import { listOwnBlogPosts } from "../publishing-api";
 import { PublicationListItem } from "./PublicationListItem";
@@ -36,6 +38,8 @@ export function PublishingDashboard({
   const [items, setItems] = useState<BlogAuthorWorkspacePostSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [draftDeletedMessage, setDraftDeletedMessage] = useState<string | null>(null);
+  const draftDeletedRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(
     async (status: BlogPostStatus) => {
@@ -62,6 +66,13 @@ export function PublishingDashboard({
     void load(tab);
   }, [load, tab]);
 
+  useEffect(() => {
+    if (!draftDeletedMessage) {
+      return;
+    }
+    revealContextualFeedback(draftDeletedRef.current);
+  }, [draftDeletedMessage]);
+
   return (
     <div className="publishing-dashboard">
       <div className="publishing-dashboard__header">
@@ -82,7 +93,10 @@ export function PublishingDashboard({
             role="tab"
             aria-selected={tab === id}
             className={`hu-tab-control publishing-dashboard__tab${tab === id ? " is-active" : ""}`}
-            onClick={() => setTab(id)}
+            onClick={() => {
+              setDraftDeletedMessage(null);
+              setTab(id);
+            }}
           >
             {t(`tabs.${id}`)}
           </button>
@@ -97,6 +111,14 @@ export function PublishingDashboard({
         <p className="hu-body publishing-dashboard__empty">{t(`empty.${tab}`)}</p>
       ) : null}
 
+      {draftDeletedMessage ? (
+        <div ref={draftDeletedRef} className="publishing-dashboard__action-feedback">
+          <AuthFeedbackMessage variant="success" title={t("draftDeletedTitle")}>
+            <p>{draftDeletedMessage}</p>
+          </AuthFeedbackMessage>
+        </div>
+      ) : null}
+
       <ul className="publishing-dashboard__list">
         {items.map((post) => (
           <li key={post.postId}>
@@ -104,6 +126,7 @@ export function PublishingDashboard({
               post={post}
               canDirectPublish={canDirectPublish}
               mutationsDisabled={mutationsDisabled}
+              onDraftDiscarded={() => setDraftDeletedMessage(t("draftDeleted"))}
               onMutated={() => void load(tab)}
             />
           </li>

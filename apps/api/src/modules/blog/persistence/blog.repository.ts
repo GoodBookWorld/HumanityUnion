@@ -15,6 +15,7 @@ import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collect
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
 import { connectMongoClient } from "../../../infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
+import { DRAFT_DISCARD_BLOCKING_HISTORY } from "../blog-draft-discard.js";
 import { BlogPersistenceError, BlogPersistenceUnavailableError } from "../blog.errors.js";
 import {
   fromBlogAuthorApplicationMongoDocument,
@@ -372,6 +373,61 @@ export async function deleteBlogPostsByIds(
   await ensureBlogMongoReady();
   const result = await postsCollection().deleteMany({ postId: { $in: [...postIds] } });
   return result.deletedCount;
+}
+
+function neverPublishedDraftMatches(
+  post: BlogPost,
+  input: { postId: string; authorParticipantId: string; expectedUpdatedAt: string },
+): boolean {
+  if (post.postId !== input.postId || post.authorParticipantId !== input.authorParticipantId) {
+    return false;
+  }
+  if (post.status !== "draft" || post.publishedVersion !== 0 || post.updatedAt !== input.expectedUpdatedAt) {
+    return false;
+  }
+  if (post.administrativelyBlocked === true) {
+    return false;
+  }
+  if (post.externalCover?.source === "integrity-media" || post.externalVideo?.source === "integrity-media") {
+    return false;
+  }
+  return !(post.editorialHistory ?? []).some((entry) =>
+    DRAFT_DISCARD_BLOCKING_HISTORY.includes(entry.action),
+  );
+}
+
+/**
+ * Deletes one owned never-published draft only when every eligibility field
+ * still matches. A missing publishedVersion does not match publishedVersion: 0.
+ */
+export async function deleteNeverPublishedOwnedDraft(input: {
+  postId: string;
+  authorParticipantId: string;
+  expectedUpdatedAt: string;
+}): Promise<boolean> {
+  const memory = blogMemory();
+  if (memory) {
+    const post = memory.posts.get(input.postId);
+    if (!post || !neverPublishedDraftMatches(post, input)) {
+      return false;
+    }
+    memory.posts.delete(input.postId);
+    return true;
+  }
+
+  await ensureBlogMongoReady();
+  const result = await postsCollection().deleteOne({
+    postId: input.postId,
+    authorParticipantId: input.authorParticipantId,
+    status: "draft",
+    publishedVersion: 0,
+    updatedAt: input.expectedUpdatedAt,
+    administrativelyBlocked: { $ne: true },
+    "externalCover.source": { $ne: "integrity-media" },
+    "externalVideo.source": { $ne: "integrity-media" },
+    "editorialHistory.action": { $nin: [...DRAFT_DISCARD_BLOCKING_HISTORY] },
+  });
+  return result.deletedCount === 1;
 }
 
 export async function findBlogPostById(postId: string): Promise<BlogPost | null> {

@@ -118,6 +118,21 @@ export async function archiveBlogPost(postId: string): Promise<BlogAuthorWorkspa
   );
 }
 
+/** Deletes one never-published draft. Does not archive a published article. */
+export async function discardUnpublishedBlogDraft(
+  postId: string,
+  expectedUpdatedAt: string,
+): Promise<{ postId: string }> {
+  return apiRequest<{ postId: string }>(
+    `/api/v1/blog/posts/${encodeURIComponent(postId)}/discard-draft`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expectedUpdatedAt }),
+    },
+  );
+}
+
 /**
  * Pack 16A — Standard Author correction: published → draft (same postId/slug).
  * Trusted Authors correct in place via updateBlogDraft instead.

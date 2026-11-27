@@ -636,7 +636,12 @@
           "approved": "已核准",
           "declined": "已拒絕"
         }
-      }
+      },
+      "draftDeleteTitle": "刪除這篇未發布的草稿？",
+      "draftDeleteBody": "這篇未發布的草稿將被刪除。已發布的文章不受影響。",
+      "draftDeleteConfirm": "刪除草稿",
+      "draftDeletedTitle": "草稿已刪除",
+      "draftDeleted": "未發布的草稿已刪除。"
     },
     "editorialPage": {
       "title": "編輯審核",

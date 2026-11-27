@@ -636,7 +636,12 @@
           "approved": "Approved",
           "declined": "Declined"
         }
-      }
+      },
+      "draftDeleteTitle": "Delete this unpublished draft?",
+      "draftDeleteBody": "This unpublished draft will be deleted. Published articles are not affected.",
+      "draftDeleteConfirm": "Delete draft",
+      "draftDeletedTitle": "Draft deleted",
+      "draftDeleted": "The unpublished draft was deleted."
     },
     "editorialPage": {
       "title": "Editorial Review",

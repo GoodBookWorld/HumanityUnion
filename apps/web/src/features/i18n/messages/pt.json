@@ -7418,7 +7418,12 @@
       "tabsAria": "Status de publicação",
       "title": "Publicação",
       "unavailableTitle": "Publicação indisponível",
-      "updated": "Atualizado {date}"
+      "updated": "Atualizado {date}",
+      "draftDeleteTitle": "Excluir este rascunho não publicado?",
+      "draftDeleteBody": "Este rascunho não publicado será excluído. Os artigos publicados não são afetados.",
+      "draftDeleteConfirm": "Excluir rascunho",
+      "draftDeletedTitle": "Rascunho excluído",
+      "draftDeleted": "O rascunho não publicado foi excluído."
     },
     "requestEmailChange": "Solicitar alteração de e-mail",
     "role": "Função",

@@ -7418,7 +7418,12 @@
       "tabsAria": "Estado de publicación",
       "title": "Publicación",
       "unavailableTitle": "Publicación no disponible",
-      "updated": "Actualizado {date}"
+      "updated": "Actualizado {date}",
+      "draftDeleteTitle": "¿Eliminar este borrador no publicado?",
+      "draftDeleteBody": "Este borrador no publicado se eliminará. Los artículos publicados no se ven afectados.",
+      "draftDeleteConfirm": "Eliminar borrador",
+      "draftDeletedTitle": "Borrador eliminado",
+      "draftDeleted": "El borrador no publicado se eliminó."
     },
     "requestEmailChange": "Solicitar cambio de correo electrónico",
     "role": "Rol",

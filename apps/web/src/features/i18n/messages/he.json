@@ -7418,7 +7418,12 @@
       "tabsAria": "סטטוס פרסום",
       "title": "פרסום",
       "unavailableTitle": "הפרסום אינו זמין",
-      "updated": "עודכן {date}"
+      "updated": "עודכן {date}",
+      "draftDeleteTitle": "למחוק את הטיוטה הזו שטרם פורסמה?",
+      "draftDeleteBody": "טיוטה זו שטרם פורסמה תימחק. מאמרים שפורסמו לא יושפעו.",
+      "draftDeleteConfirm": "מחיקת הטיוטה",
+      "draftDeletedTitle": "הטיוטה נמחקה",
+      "draftDeleted": "הטיוטה שטרם פורסמה נמחקה."
     },
     "requestEmailChange": "בקשת שינוי כתובת דוא\"ל",
     "role": "תפקיד",

@@ -182,6 +182,23 @@ export async function findArticleDelivery(
   );
 }
 
+/** Local read only. Does not call Integrity Media. */
+export async function articleDeliveryReferencesBlogPost(postId: string): Promise<boolean> {
+  if (articleDeliveryUsesMemory()) {
+    for (const row of memoryRows.values()) {
+      if (row.postId === postId) {
+        return true;
+      }
+    }
+    return false;
+  }
+  const found = await collection().findOne(
+    { source: INTEGRITY_MEDIA_SOURCE, postId },
+    { projection: { _id: 1 } },
+  );
+  return found !== null;
+}
+
 export async function insertArticleDelivery(record: ArticleDeliveryRecord): Promise<void> {
   if (articleDeliveryUsesMemory()) {
     const key = deliveryKey(record.source, record.publicationId);

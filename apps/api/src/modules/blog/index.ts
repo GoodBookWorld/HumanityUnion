@@ -2,6 +2,7 @@ export { blogRouter, publicBlogRouter } from "./blog.routes.js";
 export {
   applyForBlogAuthorCapability,
   archiveBlogPost,
+  discardUnpublishedBlogDraft,
   createBlogDraft,
   decideBlogAuthorApplication,
   decideBlogAuthorApplicationAsAdmin,

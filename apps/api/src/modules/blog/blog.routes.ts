@@ -39,6 +39,7 @@ import {
 import {
   applyForBlogAuthorCapability,
   archiveBlogPost,
+  discardUnpublishedBlogDraft,
   createBlogDraft,
   decideBlogAuthorApplication,
   decideBlogAuthorApplicationAsAdmin,
@@ -550,6 +551,27 @@ blogRouter.post("/posts/:postId/archive", requireJwtAuthenticationMiddleware, as
     handleBlogError(res, error);
   }
 });
+
+blogRouter.post(
+  "/posts/:postId/discard-draft",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const expectedUpdatedAt =
+        typeof req.body?.expectedUpdatedAt === "string" ? req.body.expectedUpdatedAt : undefined;
+      const data = await discardUnpublishedBlogDraft({
+        postId: routeParam(req.params.postId),
+        actorParticipantId: identity.participantId,
+        role: identity.role,
+        expectedUpdatedAt,
+      });
+      res.json(createSuccessResponse(data, "Unpublished draft deleted."));
+    } catch (error) {
+      handleBlogError(res, error);
+    }
+  },
+);
 
 blogRouter.post(
   "/posts/:postId/start-correction",
