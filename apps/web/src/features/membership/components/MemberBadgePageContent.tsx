@@ -10,6 +10,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
+
 import { MemberWorkspace } from "../../../components/member/MemberWorkspace";
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
@@ -102,6 +104,8 @@ function MemberBadgePageBody() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const checkoutErrorRef = useContextualActionReveal(checkoutError);
   const contributionCancelled = searchParams.get("contribution") === "cancelled";
 
   const loadPage = useCallback(async () => {
@@ -131,13 +135,13 @@ function MemberBadgePageBody() {
 
   const handleRequest = async () => {
     setCheckoutLoading(true);
-    setError(null);
+    setCheckoutError(null);
 
     try {
       const checkout = await startMemberBadgeContribution();
       window.location.assign(checkout.checkoutUrl);
-    } catch (checkoutError) {
-      setError(formatAuthFormError(checkoutError));
+    } catch (checkoutFailure) {
+      setCheckoutError(formatAuthFormError(checkoutFailure));
       setCheckoutLoading(false);
     }
   };
@@ -210,6 +214,15 @@ function MemberBadgePageBody() {
             authStatus={authStatus}
             onRequest={() => void handleRequest()}
           />
+          {checkoutError ? (
+            <div
+              ref={checkoutErrorRef}
+              className="member-badge-page__banner member-badge-page__banner--error contextual-action-feedback"
+              role="alert"
+            >
+              {checkoutError}
+            </div>
+          ) : null}
         </div>
       </section>
 

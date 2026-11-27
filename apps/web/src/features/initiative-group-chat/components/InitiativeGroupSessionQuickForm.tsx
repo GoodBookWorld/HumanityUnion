@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { useTranslations } from "next-intl";
 
 import type { InitiativeCollaborationSessionInput } from "@hu/types";
@@ -68,6 +70,7 @@ export function InitiativeGroupSessionQuickForm({ initiativeId, onScheduled }: I
   const [externalMeetingLink, setExternalMeetingLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useContextualActionReveal(error);
   const timezoneOptions = useMemo(() => resolveTimezoneOptions(), []);
 
   async function handleSubmit(event: React.FormEvent) {
@@ -188,15 +191,14 @@ export function InitiativeGroupSessionQuickForm({ initiativeId, onScheduled }: I
           />
         </div>
 
-        {error ? (
-          <p className="igc-session-form__error" role="alert">
-            {error}
-          </p>
-        ) : null}
-
         <button type="submit" className="hu-button hu-button--primary igc-session-form__submit" disabled={submitting}>
           {submitting ? t("scheduling") : tSessions("scheduleSession")}
         </button>
+        {error ? (
+          <p ref={errorRef} className="igc-session-form__error" role="alert">
+            {error}
+          </p>
+        ) : null}
       </form>
     </section>
   );

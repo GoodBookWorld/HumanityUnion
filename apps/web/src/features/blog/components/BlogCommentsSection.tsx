@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
 import type { PublicBlogComment } from "@hu/types";
@@ -10,6 +10,7 @@ import { Button } from "../../../design-system/components/Button";
 import { HelperText } from "../../../design-system/components/HelperText";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { formatAuthFormError } from "../../../lib/api-client";
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import {
   createPublicBlogComment,
@@ -56,7 +57,11 @@ export function BlogCommentsSection({
   const [comments, setComments] = useState<readonly PublicBlogComment[]>([]);
   const [total, setTotal] = useState(initialCount);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [composerError, setComposerError] = useState<string | null>(null);
+  const [replyError, setReplyError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<{ commentId: string; text: string } | null>(null);
+  const [noticeCommentId, setNoticeCommentId] = useState<string | null>(null);
   const [content, setContent] = useState("");
   const [posting, setPosting] = useState(false);
   const [postedFlash, setPostedFlash] = useState(false);
@@ -85,7 +90,7 @@ export function BlogCommentsSection({
       .catch((loadError: unknown) => {
         if (!cancelled) {
           // API_OPAQUE — surface formatted API/auth error copy as-is.
-          setError(formatAuthFormError(loadError));
+          setLoadError(formatAuthFormError(loadError));
           setLoading(false);
         }
       });
@@ -103,8 +108,12 @@ export function BlogCommentsSection({
   }, [postedFlash]);
 
   async function submitTopLevel() {
+    if (posting) {
+      return;
+    }
     setPosting(true);
-    setError(null);
+    setComposerError(null);
+    setNoticeCommentId(null);
     setPendingMessage(null);
     try {
       const result = await createPublicBlogComment({ slug, content });
@@ -118,15 +127,18 @@ export function BlogCommentsSection({
       await reload();
     } catch (postError: unknown) {
       // API_OPAQUE — surface formatted API/auth error copy as-is.
-      setError(formatAuthFormError(postError));
+      setComposerError(formatAuthFormError(postError));
     } finally {
       setPosting(false);
     }
   }
 
   async function submitReply(parentCommentId: string) {
+    if (posting) {
+      return;
+    }
     setPosting(true);
-    setError(null);
+    setReplyError(null);
     setPendingMessage(null);
     try {
       const result = await createPublicBlogComment({
@@ -135,6 +147,7 @@ export function BlogCommentsSection({
         parentCommentId,
       });
       setReplyContent("");
+      setNoticeCommentId(parentCommentId);
       setReplyToId(null);
       setPostedFlash(true);
       setOwnedIds((current) => new Set([...current, result.commentId]));
@@ -145,20 +158,20 @@ export function BlogCommentsSection({
       await reload();
     } catch (postError: unknown) {
       // API_OPAQUE — surface formatted API/auth error copy as-is.
-      setError(formatAuthFormError(postError));
+      setReplyError(formatAuthFormError(postError));
     } finally {
       setPosting(false);
     }
   }
 
   async function removeOwn(commentId: string) {
-    setError(null);
+    setDeleteError(null);
     try {
       await deletePublicBlogComment({ slug, commentId });
       await reload();
     } catch (deleteError: unknown) {
       // API_OPAQUE — surface formatted API/auth error copy as-is.
-      setError(formatAuthFormError(deleteError));
+      setDeleteError({ commentId, text: formatAuthFormError(deleteError) });
     }
   }
 
@@ -168,14 +181,8 @@ export function BlogCommentsSection({
         {total > 0 ? t("headingWithCount", { count: total }) : t("heading")}
       </h2>
 
-      {pendingMessage ? (
-        <StatusBanner title={t("awaitingReviewTitle")} message={pendingMessage} />
-      ) : null}
-      {error ? <StatusBanner title={t("actionUnavailableTitle")} message={error} /> : null}
-      {postedFlash ? (
-        <p className="hu-caption" aria-live="polite">
-          {t("posted")}
-        </p>
+      {loadError ? (
+        <StatusBanner title={t("actionUnavailableTitle")} message={loadError} />
       ) : null}
 
       <div className="blog-comments__composer">
@@ -214,6 +221,23 @@ export function BlogCommentsSection({
                 {posting ? t("posting") : t("postComment")}
               </Button>
             </div>
+            {composerError || (noticeCommentId === null && (pendingMessage || postedFlash)) ? (
+              <CommentActionNotice
+                noticeKey={[composerError, pendingMessage, postedFlash].join(":")}
+              >
+                {composerError ? (
+                  <StatusBanner title={t("actionUnavailableTitle")} message={composerError} />
+                ) : null}
+                {pendingMessage ? (
+                  <StatusBanner title={t("awaitingReviewTitle")} message={pendingMessage} />
+                ) : null}
+                {postedFlash ? (
+                  <p className="hu-caption" aria-live="polite">
+                    {t("posted")}
+                  </p>
+                ) : null}
+              </CommentActionNotice>
+            ) : null}
           </>
         )}
       </div>
@@ -264,6 +288,25 @@ export function BlogCommentsSection({
                   ) : null}
                 </div>
               ) : null}
+              {deleteError?.commentId === comment.commentId ? (
+                <CommentActionNotice noticeKey={`delete:${comment.commentId}:${deleteError.text}`}>
+                  <StatusBanner title={t("actionUnavailableTitle")} message={deleteError.text} />
+                </CommentActionNotice>
+              ) : null}
+              {noticeCommentId === comment.commentId && (pendingMessage || postedFlash) ? (
+                <CommentActionNotice
+                  noticeKey={`notice:${comment.commentId}:${pendingMessage ?? ""}:${postedFlash}`}
+                >
+                  {pendingMessage ? (
+                    <StatusBanner title={t("awaitingReviewTitle")} message={pendingMessage} />
+                  ) : null}
+                  {postedFlash ? (
+                    <p className="hu-caption" aria-live="polite">
+                      {t("posted")}
+                    </p>
+                  ) : null}
+                </CommentActionNotice>
+              ) : null}
 
               {replyToId === comment.commentId ? (
                 <div className="blog-comments__reply-composer">
@@ -298,6 +341,11 @@ export function BlogCommentsSection({
                       {t("cancel")}
                     </Button>
                   </div>
+                  {replyError ? (
+                    <CommentActionNotice noticeKey={`reply:${comment.commentId}:${replyError}`}>
+                      <StatusBanner title={t("actionUnavailableTitle")} message={replyError} />
+                    </CommentActionNotice>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -330,6 +378,11 @@ export function BlogCommentsSection({
                           </Button>
                         </div>
                       ) : null}
+                      {deleteError?.commentId === reply.commentId ? (
+                        <CommentActionNotice noticeKey={`delete:${reply.commentId}:${deleteError.text}`}>
+                          <StatusBanner title={t("actionUnavailableTitle")} message={deleteError.text} />
+                        </CommentActionNotice>
+                      ) : null}
                     </li>
                   ))}
                 </ol>
@@ -339,5 +392,20 @@ export function BlogCommentsSection({
         ))}
       </ol>
     </section>
+  );
+}
+
+function CommentActionNotice({
+  noticeKey,
+  children,
+}: {
+  noticeKey: string;
+  children: ReactNode;
+}) {
+  const ref = useContextualActionReveal(noticeKey);
+  return (
+    <div ref={ref} className="contextual-action-feedback">
+      {children}
+    </div>
   );
 }

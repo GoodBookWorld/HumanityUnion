@@ -117,6 +117,11 @@
   padding: var(--hu-space-4, 1rem) var(--hu-space-5, 1.25rem);
 }
 
+.member-badge-application-modal__actions > .contextual-action-feedback {
+  flex-basis: 100%;
+  text-align: start;
+}
+
 .member-badge-application-widget__card {
   display: grid;
   gap: var(--hu-space-4, 1rem);

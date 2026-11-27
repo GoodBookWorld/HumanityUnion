@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
+
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { useLocale, useTranslations } from "next-intl";
 
 import type {
@@ -184,6 +186,7 @@ interface SessionEditorFormProps {
 function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: SessionEditorFormProps) {
   const t = useTranslations("initiativeExperience");
   const formId = useId();
+  const errorRef = useContextualActionReveal(error);
   const [title, setTitle] = useState(initial?.title ?? "");
   const [agenda, setAgenda] = useState(initial?.agenda ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -317,12 +320,6 @@ function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: S
         <p className="ics-editor__hint">{t("collaboration.sessions.linkHint")}</p>
       </div>
 
-      {error ? (
-        <p className="ics-status ics-status--error" role="alert">
-          {error}
-        </p>
-      ) : null}
-
       <div className="ics-editor__actions">
         <button type="button" className="hu-button hu-button--secondary" onClick={onCancel} disabled={submitting}>
           {t("collaboration.sessions.cancel")}
@@ -335,6 +332,11 @@ function SessionEditorForm({ initial, submitting, error, onSubmit, onCancel }: S
               : t("collaboration.sessions.scheduleSession")}
         </button>
       </div>
+      {error ? (
+        <p ref={errorRef} className="ics-status ics-status--error" role="alert">
+          {error}
+        </p>
+      ) : null}
     </form>
   );
 }
@@ -344,6 +346,7 @@ function SessionDetail({
   session,
   busy,
   actionError,
+  actionErrorPlace,
   onEdit,
   onCancelSession,
   onRespond,
@@ -352,12 +355,16 @@ function SessionDetail({
   session: InitiativeCollaborationSessionView;
   busy: boolean;
   actionError: string | null;
+  actionErrorPlace: "attendance" | "author" | null;
   onEdit: () => void;
   onCancelSession: () => void;
   onRespond: (response: InitiativeCollaborationSessionAttendanceResponse) => void;
 }) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
+  const actionErrorRef = useContextualActionReveal(
+    actionError ? `${actionErrorPlace}:${actionError}` : null,
+  );
 
   return (
     <article
@@ -429,6 +436,11 @@ function SessionDetail({
             ))}
           </div>
         ) : null}
+        {actionError && actionErrorPlace === "attendance" ? (
+          <p ref={actionErrorRef} className="ics-status ics-status--error" role="alert">
+            {actionError}
+          </p>
+        ) : null}
 
         {session.attendanceRoster && session.attendanceRoster.length > 0 ? (
           <ul className="ics-roster">
@@ -446,12 +458,6 @@ function SessionDetail({
         ) : null}
       </div>
 
-      {actionError ? (
-        <p className="ics-status ics-status--error" role="alert">
-          {actionError}
-        </p>
-      ) : null}
-
       {session.canEdit && session.status !== "cancelled" ? (
         <div className="ics-detail__author-actions">
           <button type="button" className="hu-button hu-button--secondary" onClick={onEdit} disabled={busy}>
@@ -461,6 +467,11 @@ function SessionDetail({
             {t("collaboration.sessions.cancelSession")}
           </button>
         </div>
+      ) : null}
+      {actionError && actionErrorPlace === "author" ? (
+        <p ref={actionErrorRef} className="ics-status ics-status--error" role="alert">
+          {actionError}
+        </p>
       ) : null}
     </article>
   );
@@ -489,6 +500,7 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
   const [editorState, setEditorState] = useState<EditorState>("closed");
   const [editorError, setEditorError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionErrorPlace, setActionErrorPlace] = useState<"attendance" | "author" | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -572,6 +584,7 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
 
     setBusy(true);
     setActionError(null);
+    setActionErrorPlace("author");
 
     try {
       await cancelInitiativeCollaborationSession(initiativeId, selectedSession.sessionId);
@@ -594,6 +607,7 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
 
     setBusy(true);
     setActionError(null);
+    setActionErrorPlace("attendance");
 
     try {
       await setInitiativeCollaborationSessionAttendance(initiativeId, selectedSession.sessionId, response);
@@ -701,6 +715,7 @@ export function InitiativeCollaborationSessionsPanel({ initiativeId }: Initiativ
               session={selectedSession}
               busy={busy}
               actionError={actionError}
+              actionErrorPlace={actionErrorPlace}
               onEdit={() => {
                 setEditorError(null);
                 setEditorState("edit");

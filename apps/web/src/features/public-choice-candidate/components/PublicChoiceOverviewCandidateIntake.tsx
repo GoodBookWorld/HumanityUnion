@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { useTranslations } from "next-intl";
 
 import type {
@@ -87,6 +89,7 @@ export function PublicChoiceOverviewCandidateIntake({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [feedbackAnchor, setFeedbackAnchor] = useState<string | null>(null);
   const loadGenerationRef = useRef(0);
   const hasCompletedLoadRef = useRef(false);
 
@@ -235,6 +238,7 @@ export function PublicChoiceOverviewCandidateIntake({
 
     setBusy(true);
     setPendingId(pending);
+    setFeedbackAnchor(pending);
     setError(null);
     setStatusMessage(null);
 
@@ -266,6 +270,7 @@ export function PublicChoiceOverviewCandidateIntake({
 
     setBusy(true);
     setPendingId("recall");
+    setFeedbackAnchor(selectedCandidateId);
     setError(null);
     setStatusMessage(null);
 
@@ -434,6 +439,20 @@ export function PublicChoiceOverviewCandidateIntake({
                   )
                 ) : null}
               </div>
+              {feedbackAnchor === candidate.candidateId && (error || statusMessage) ? (
+                <VoteActionNotice noticeKey={`${candidate.candidateId}:${error ?? ""}:${statusMessage ?? ""}`}>
+                  {statusMessage ? (
+                    <p role="status" className="pie-overview-candidates__status">
+                      {statusMessage}
+                    </p>
+                  ) : null}
+                  {error ? (
+                    <p role="alert" className="pie-overview-candidates__error">
+                      {error}
+                    </p>
+                  ) : null}
+                </VoteActionNotice>
+              ) : null}
             </li>
           );
         })}
@@ -488,12 +507,12 @@ export function PublicChoiceOverviewCandidateIntake({
         </p>
       ) : null}
 
-      {statusMessage ? (
+      {statusMessage && feedbackAnchor === null ? (
         <p role="status" className="pie-overview-candidates__status">
           {statusMessage}
         </p>
       ) : null}
-      {error ? (
+      {error && feedbackAnchor === null ? (
         <p role="alert" className="pie-overview-candidates__error">
           {error}
         </p>
@@ -510,5 +529,20 @@ export function PublicChoiceOverviewCandidateIntake({
         />
       ) : null}
     </section>
+  );
+}
+
+function VoteActionNotice({
+  noticeKey,
+  children,
+}: {
+  noticeKey: string;
+  children: ReactNode;
+}) {
+  const ref = useContextualActionReveal(noticeKey);
+  return (
+    <div ref={ref} className="contextual-action-feedback">
+      {children}
+    </div>
   );
 }

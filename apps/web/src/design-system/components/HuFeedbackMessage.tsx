@@ -11,15 +11,9 @@ interface HuFeedbackMessageProps {
   id?: string;
 }
 
-const VARIANT_LABELS: Record<HuFeedbackVariant, string> = {
-  neutral: "Notice",
-  warning: "Notice",
-  error: "Error",
-  success: "Success",
-};
-
 export function HuFeedbackMessage({ variant, title, children, id }: HuFeedbackMessageProps) {
   const role = variant === "error" ? "alert" : "status";
+  const heading = title?.trim();
 
   return (
     <div
@@ -28,7 +22,7 @@ export function HuFeedbackMessage({ variant, title, children, id }: HuFeedbackMe
       role={role}
       aria-live={variant === "error" ? "assertive" : "polite"}
     >
-      <p className="hu-feedback__label">{title ?? VARIANT_LABELS[variant]}</p>
+      {heading ? <p className="hu-feedback__label">{heading}</p> : null}
       <div className="hu-feedback__content">{children}</div>
     </div>
   );

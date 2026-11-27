@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
 import { useLocale, useTranslations } from "next-intl";
 
 import type {
@@ -182,6 +184,7 @@ export function InitiativeCollaborationChannel({
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const sendErrorRef = useContextualActionReveal(sendError);
   const displayTitle = useIccInitiativeDisplayTitle({
     initiativeId,
     canonicalTitle: summary?.initiativeTitle ?? "",
@@ -454,7 +457,7 @@ export function InitiativeCollaborationChannel({
           </button>
         </div>
         {sendError ? (
-          <p className="icc-channel__status icc-channel__status--error" role="alert">
+          <p ref={sendErrorRef} className="icc-channel__status icc-channel__status--error" role="alert">
             {sendError}
           </p>
         ) : null}

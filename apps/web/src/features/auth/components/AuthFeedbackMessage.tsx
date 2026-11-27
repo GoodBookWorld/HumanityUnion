@@ -11,15 +11,9 @@ interface AuthFeedbackMessageProps {
   id?: string;
 }
 
-const VARIANT_LABELS: Record<AuthFeedbackVariant, string> = {
-  info: "Information",
-  success: "Success",
-  warning: "Notice",
-  error: "Error",
-};
-
 export function AuthFeedbackMessage({ variant, title, children, id }: AuthFeedbackMessageProps) {
   const role = variant === "error" ? "alert" : "status";
+  const heading = title?.trim();
 
   return (
     <div
@@ -28,7 +22,7 @@ export function AuthFeedbackMessage({ variant, title, children, id }: AuthFeedba
       role={role}
       aria-live={variant === "error" ? "assertive" : "polite"}
     >
-      <p className="auth-feedback__label">{title ?? VARIANT_LABELS[variant]}</p>
+      {heading ? <p className="auth-feedback__label">{heading}</p> : null}
       <div className="auth-feedback__content">{children}</div>
     </div>
   );

@@ -5,6 +5,8 @@ import { MEMBER_BADGE_APPLICATION_PRICE_LABEL } from "@hu/types";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { useContextualActionReveal } from "../../auth/components/ContextualActionFeedback";
+
 import { Button } from "../../../design-system/components/Button";
 import { trapTabKey } from "../../../design-system/focus-trap";
 import { formatAuthFormError } from "../../../lib/api-client";
@@ -55,6 +57,8 @@ export function MemberBadgeApplicationModal({
   const [busy, setBusy] = useState<"save" | "payment" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
+  const errorRef = useContextualActionReveal(error);
+  const paymentRef = useContextualActionReveal(paymentMessage);
 
   useEffect(() => {
     if (!isOpen) {
@@ -296,16 +300,6 @@ export function MemberBadgeApplicationModal({
               />
             </label>
 
-            {error ? (
-              <p className="member-badge-application-modal__error" role="alert">
-                {error}
-              </p>
-            ) : null}
-            {paymentMessage ? (
-              <p className="member-badge-application-modal__status" role="status">
-                {paymentMessage}
-              </p>
-            ) : null}
           </form>
         </div>
 
@@ -328,6 +322,16 @@ export function MemberBadgeApplicationModal({
               ? t("badgeApplication.continuing")
               : t("badgeApplication.continueToPayment")}
           </Button>
+          {error ? (
+            <p ref={errorRef} className="member-badge-application-modal__error contextual-action-feedback" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {paymentMessage ? (
+            <p ref={paymentRef} className="member-badge-application-modal__status contextual-action-feedback" role="status">
+              {paymentMessage}
+            </p>
+          ) : null}
         </footer>
       </div>
     </div>

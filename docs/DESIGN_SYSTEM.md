@@ -303,7 +303,7 @@ Participant action results use `ContextualActionFeedback` (`apps/web/src/feature
 - Keep verification and security instructions until a newer result for that same action replaces them.
 - If success removes the control, render the result in the nearest section that remains.
 - Leave page loading, page-level load failures, empty states, persistent lifecycle or publication status, field validation, notification-center messages, and confirmation dialogs where they are.
-- Use existing translated copy. Support every locale, including right-to-left layout, with logical CSS.
+- Use existing translated copy. When a message has no localized title, render the translated body without a heading. Do not insert an English variant label. Support every locale, including right-to-left layout, with logical CSS.
 
 ### Section structure
 
